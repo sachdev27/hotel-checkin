@@ -1,0 +1,1 @@
+# hote-checkin-appscript
