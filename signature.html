@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background-color: #f7f7f7;
+        margin: 0;
+        padding: 20px;
+      }
+      h3 {
+        color: #333;
+      }
+      #signature-pad {
+        border: 2px solid #000;
+        border-radius: 8px;
+        width: 80%;
+        max-width: 900px;
+        height: 400px;
+      }
+      .button-container {
+        margin-top: 20px;
+      }
+      .canvas{
+        margin-top : 100px;
+      }
+      button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        text-align: center;
+        font-size: 16px;
+        border-radius: 5px;
+        margin: 5px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      button:active {
+        background-color: #3e8e41;
+      }
+      #loader {
+        border: 16px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 16px solid #3498db;
+        width: 60px;
+        height: 60px;
+        animation: spin 2s linear infinite;
+        display: none;
+        margin: 20px auto;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class='canvas'>
+    <h3>Please sign below</h3>
+    <canvas id="signature-pad"></canvas>
+    <div class="button-container">
+      <button onclick="clearSignature()">Clear</button>
+      <button onclick="saveSignature()">Save Signature</button>
+    </div>
+    <div>
+    <div id="loader"></div>
+    <script>
+      const canvas = document.getElementById('signature-pad');
+      const ctx = canvas.getContext('2d');
+      let drawing = false;
+
+      function resizeCanvas() {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        ctx.scale(ratio, ratio);
+      }
+
+      window.onresize = resizeCanvas;
+      resizeCanvas();
+
+      canvas.addEventListener('mousedown', () => { drawing = true });
+      canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath() });
+      canvas.addEventListener('mousemove', draw);
+
+      function draw(event) {
+        if (!drawing) return;
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#000';
+        ctx.lineTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
+      }
+
+      function clearSignature() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function saveSignature() {
+        // Show the loader while saving the signature
+        document.getElementById('loader').style.display = 'block';
+
+        const dataUrl = canvas.toDataURL();
+        google.script.run.withSuccessHandler(onSave).saveSignature(dataUrl);
+      }
+
+      function onSave(url) {
+        // Hide the loader once the signature is saved
+        document.getElementById('loader').style.display = 'none';
+
+        // Copy the link to clipboard
+        const dummy = document.createElement('input');
+        document.body.appendChild(dummy);
+        dummy.value = url;
+        dummy.select();
+        document.execCommand('copy');
+        document.body.removeChild(dummy);
+
+        // Display a success message and the link
+        document.body.innerHTML = '<p>Signature saved successfully! <a href="' + url + '" target="_blank">View Signature</a><br/><br/>The link has been copied to your clipboard. This tab will close automatically.</p>';
+
+        window.top.close();
+      }
+    </script>
+  </body>
+</html>
+
