@@ -60,14 +60,13 @@
         }
         .form-control {
             border: 2px solid #ced4da;
-            /* border-radius: 10px; */
             border-radius: 0;
         }
         .form-control:focus {
             box-shadow: none;
             border-color: #0361A7;
         }
-        .button{
+        .button {
             margin: 20px 0px;
             text-align: center;
         }
@@ -98,9 +97,9 @@
         }
         .navbar {
             width: 100%;
-            position: fixed; /* Set the navbar to fixed position */
-            top: 0; /* Position the navbar at the top of the page */
-            width: 100%; /* Full width */
+            position: fixed;
+            top: 0;
+            width: 100%;
             padding: 10px 20px;
             background-color: #02406f;
             color: white;
@@ -111,56 +110,85 @@
             font-weight: bold;
             color: white;
         }
+        .navbar-brand:hover{
+          color: #f2f2f2;
+        }
+        /* Loader Styles */
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 8px solid #0361A7;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
     <script>
         function checkPhoneNumber() {
+            // Show loader
+            document.getElementById('loader').style.display = 'block';
+
             var phoneNumber = document.getElementById('phoneNumber').value;
             google.script.run.withSuccessHandler(handleCheckResult).checkUser(phoneNumber);
         }
 
         function handleCheckResult(result) {
+            // Hide loader
+            document.getElementById('loader').style.display = 'none';
+
             if (result.exists) {
                 document.getElementById('result').innerHTML = '<div class="alert alert-success">Thank you for visiting us again!</div>';
-                  // Wait and then redirect to the formed link
-                  setTimeout(function() {
-                      console.log(result.formUrl)
-                      window.open(result.formUrl, '_blank');
-                  }, 2000); // 2 seconds
+                setTimeout(function() {
+                    window.open(result.formUrl, '_blank');
+                }, 2000); // 2 seconds
             } else {
                 document.getElementById('result').innerHTML = '<div class="alert alert-info">It seems like it\'s your first time. Please register here.</div>' +
                     '<a href="' + result.formUrl + '" class="btn btn-primary mt-3" target="_blank">Register as New User</a>';
             }
         }
 
+        document.getElementById('phoneNumber').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                checkPhoneNumber();
+            }
+        });
     </script>
 </head>
 <body>
-    <!-- Navbar -->
     <nav class="navbar">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">HOTEL AURA</a>
+            <a class="navbar-brand" href="https://hotelauramalad.com/">HOTEL AURA</a>
         </div>
     </nav>
 
-    <!-- Background Image -->
     <img src="https://drive.google.com/thumbnail?id=1Kytv3RypzQpJfAkjw-h3ImchuMtSFp3A&sz=w10000" class="background-image" alt="Background Image">
 
-    <!-- User Registration Form -->
     <div class="container">
         <div class="card-header">
             <h3 class="mb-0">User Registration</h3>
         </div>
         <div class="card">
             <div class="card-body">
-                <div class="mb-3">
-                    <label for="phoneNumber" class="form-label">Phone Number</label>
-                    <div class="input-group">
-                        <input type="tel" class="form-control" id="phoneNumber" placeholder="Enter 10 digit phone number">
+                <form onsubmit="checkPhoneNumber(); return false;">
+                    <div class="mb-3">
+                        <label for="phoneNumber" class="form-label">Phone Number</label>
+                        <div class="input-group">
+                            <input class="form-control" id="phoneNumber" placeholder="Enter 10 digit phone number" type="text" name="country_code" title="Phone number is not valid!!" pattern="[1-9]{1}[0-9]{9}" required>
+                        </div>
+                        <div class="button">
+                            <button type="submit" class="btn btn-primary">Check In</button>
+                        </div>
                     </div>
-                    <div class="button">
-                        <button class="btn btn-primary" onclick="checkPhoneNumber()">Check In</button>
-                    </div>
-                </div>
+                </form>
+                <!-- Loader -->
+                <div id="loader" class="loader"></div>
                 <div id="result"></div>
             </div>
         </div>
