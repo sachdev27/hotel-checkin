@@ -126,13 +126,14 @@ function generateRowDataFromForm(itemResponses, rowData) {
     var responseValue = response.getResponse();
     var responseTitle = response.getItem().getTitle();
     console.log("Checking for: ", response.getItem().getTitle(), " || ", response.getResponse())
+    var selectedKey;
     switch(responseTitle) {
       case FORM_QUESTION_TITLES.ROOM_NUMBER:
         rowData[COLUMN_INDEX_POSITIONS.ROOM] = responseValue;
         break;
       case FORM_QUESTION_TITLES.PAYMENT_MODE:
-        const selectedKey = Object.keys(DROPDOWN_COLUMN_OPTIONS.PAYMENT_MODE_RESPONE).find(key => DROPDOWN_COLUMN_OPTIONS.PAYMENT_MODE_RESPONE[key] == responseValue);
-        rowData[COLUMN_INDEX_POSITIONS.PAYMENT_MODE] = DROPDOWN_COLUMN_OPTIONS.PAYMENT_MODE_SHEET[selectedKey];
+        selectedKey = Object.keys(DROPDOWN_COLUMN_OPTIONS.PAYMENT_MODE).find(key => DROPDOWN_COLUMN_OPTIONS.PAYMENT_MODE[key] == responseValue);
+        rowData[COLUMN_INDEX_POSITIONS.PAYMENT_MODE] = DROPDOWN_COLUMN_OPTIONS.PAYMENT_MODE[selectedKey];
         break;
       case FORM_QUESTION_TITLES.GUEST_NAME:
         rowData[COLUMN_INDEX_POSITIONS.NAME] = responseValue;
@@ -148,6 +149,15 @@ function generateRowDataFromForm(itemResponses, rowData) {
         break;
       case FORM_QUESTION_TITLES.PHONE_NUMBER:
         rowData[COLUMN_INDEX_POSITIONS.MOBILE_NO] = responseValue;
+        break;
+      case FORM_QUESTION_TITLES.BOOKED_BY:
+        selectedKey = Object.keys(DROPDOWN_COLUMN_OPTIONS.BOOKED_BY).find(key => DROPDOWN_COLUMN_OPTIONS.BOOKED_BY[key] == responseValue);
+        console.log(selectedKey,response)
+        rowData[COLUMN_INDEX_POSITIONS.BOOKED_BY] = DROPDOWN_COLUMN_OPTIONS.BOOKED_BY[selectedKey]
+        break;
+      case FORM_QUESTION_TITLES.COMPANY:
+        selectedKey = Object.keys(DROPDOWN_COLUMN_OPTIONS.COMPANY).find(key => DROPDOWN_COLUMN_OPTIONS.COMPANY[key] == responseValue);
+        rowData[COLUMN_INDEX_POSITIONS.COMPANY] = DROPDOWN_COLUMN_OPTIONS.COMPANY[selectedKey]
         break;
     }
   }
@@ -167,11 +177,12 @@ function test_populateSheet(){
 const DROPDOWN_COLUMN_OPTIONS = {
   COMPANY : {
     WALKIN: "WALKIN",
+    BCOM : "BCOM",
     AGODA: "AGODA",
     GO_MMT: "GO-MMT",
     BREVISTAY: "BREVISTAY"
   },
-  PAYMENT_MODE_SHEET: {
+  PAYMENT_MODE: {
     CASH: "CASH",
     UPI: "UPI",
     CC_A: "CC(A)",
@@ -180,14 +191,10 @@ const DROPDOWN_COLUMN_OPTIONS = {
     NEFT_A: "NEFT(A)",
     PENDING_C: "Pending(C)"
   },
-  PAYMENT_MODE_RESPONE: {
-    CASH: "Cash",
-    UPI: "UPI",
-    CC_A: "Credit Card",
-    PENDING: "PENDING",
-    OTA_CASH: "OTA CASH",
-    NEFT_A: "NEFT(A)",
-    PENDING_C: "Pending(C)"
+  BOOKED_BY: {
+    SHIFT_1: "Shift 1",
+    SHIFT_2: "Shift 2",
+    SHIFT_3: "Shift 3"
   }
 }
 
@@ -211,7 +218,9 @@ const FORM_QUESTION_TITLES = {
   TARRIF: "Tariff",
   CHECKOUT_DATE: "Check-Out Date",
   ADDITIONAL_NOTE: "Additional Note",
-  PHONE_NUMBER: "Phone Number"
+  PHONE_NUMBER: "Phone Number",
+  BOOKED_BY: "Booked By",
+  COMPANY: "Company"
 }
 
 function updateSheetDate(sheet, dateString) {
