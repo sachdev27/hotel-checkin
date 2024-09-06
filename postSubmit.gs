@@ -1,5 +1,22 @@
-const TEMPLATE_SPREADSHEET_ID = "";
-const PARENT_FOLDER_ID = "";
+const TEMPLATE_SPREADSHEET_ID = "1y7UlGO8s8e1ne1P9zr-twy58gvtaE52aAbBpStPpM14";
+const PARENT_FOLDER_ID = "1EGBjEwpZwJFLzJXATZgl1McbLWhcUjWF";
+
+/**
+ * Deletes the script property for the previous month, if it exists.
+ * @param {Date} currentDate - The current date to compare.
+ */
+function deletePreviousMonthScriptProperty(currentDate) {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const previousMonth = new Date(currentDate);
+  previousMonth.setMonth(currentDate.getMonth() - 1);
+
+  const previousMonthKey = Utilities.formatDate(previousMonth, Session.getScriptTimeZone(), "MMMM yyyy");
+
+  if (scriptProperties.getProperty(previousMonthKey)) {
+    console.log(`Deleting script property for previous month: ${previousMonthKey}`);
+    scriptProperties.deleteProperty(previousMonthKey);
+  }
+}
 
 /**
  * For a given year, returns the folder for that year
@@ -30,6 +47,9 @@ function getOrCreateMonthSpreadsheet(date) {
   var monthYear = Utilities.formatDate(date, Session.getScriptTimeZone(), "MMMM yyyy");
   var yearFolder = getOrCreateYearFolder(year);
   console.log("Processed Date: ", monthYear);
+
+  // Delete previous month's script property if present
+  deletePreviousMonthScriptProperty(date);
 
   // Checks the script properties to identify if a sheet already exists or not
   // Script Properties is a set of key:value pairs that store project related values
@@ -83,8 +103,8 @@ function getOrCreateDateSheet(spreadsheet, date) {
 // Note: This test is dependant on an already created spreadSheet
 function test_getOrCreateDateSheet() {
   // Variables Required for test
-  const spreadsheetId = "1wtNPXSzlKipZr334f-nED9w1MfRPHryfrqEh3axaAvU";
-  const spreadSheet = SpreadsheetApp.openById(spreadsheetId);
+  // const spreadsheetId = "1wtNPXSzlKipZr334f-nED9w1MfRPHryfrqEh3axaAvU";
+  const spreadSheet = SpreadsheetApp.openById(TEMPLATE_SPREADSHEET_ID);
   const date = new Date(Date.now());
 
   // Actual test
