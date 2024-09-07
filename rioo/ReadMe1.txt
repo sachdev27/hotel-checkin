@@ -3,9 +3,9 @@ LockSDK    Smart Door Lock Management Software Developer's kit Instructions
 To save your time, please read the following instructions carefully!!!!
 
 
-¡ôImportant Notes
+ï¿½ï¿½Important Notes
 
-1. This interface supports the following development languages: C#¡¢VC¡¢Delphi7¡¢Delphi2000¡¢PB9.0¡¢PB10¡¢VB.net¡¢VB6.0 etc (each language in one folder). Please choose the language demo you commonly use to test and develop. 
+1. This interface supports the following development languages: C#ï¿½ï¿½VCï¿½ï¿½Delphi7ï¿½ï¿½Delphi2000ï¿½ï¿½PB9.0ï¿½ï¿½PB10ï¿½ï¿½VB.netï¿½ï¿½VB6.0 etc (each language in one folder). Please choose the language demo you commonly use to test and develop. 
 
 2. Interface file is "LockSDK.dll", which will call all kinds of underlying database. Connecting with "LockSDK.dll" will finish the connection. 
 
@@ -14,13 +14,13 @@ To save your time, please read the following instructions carefully!!!!
 
 4. When testing, please choose one language folder and open, find out "LockSDK_Demo.exe", double click, choose "5-RF50 Card" lock type, click "SDK Config" to make card.
 
-New card replaces the old card: The later check-in guest card makes the earlier guest card expired automatically. E.g. the check-in time 12:00 guest card could open the door, but after the check-in time 12:05 guest card swipe and open, the 12:00 can¡¯t open anymore. Therefore, if you want to open one room with several guest cards, please make sure the check-in time is the same or set the later cards do not replace the former cads.
+New card replaces the old card: The later check-in guest card makes the earlier guest card expired automatically. E.g. the check-in time 12:00 guest card could open the door, but after the check-in time 12:05 guest card swipe and open, the 12:00 canï¿½ï¿½t open anymore. Therefore, if you want to open one room with several guest cards, please make sure the check-in time is the same or set the later cards do not replace the former cads.
 
 If you use several software to issue cards alternately (e.g Demo, Hotel Management System, Door Lock Management System), probable only the last guest card can open the locks. After detecting authorization card or timing card on the lock, the replaced former guest card activates once again. When you meet these problems, please check the time of guest card.
 
 Deadbolt Open: Need to set the GUEST CARD CAN OPEN DB-LOCK function.
 
-Check the check-in time: In order to avoid the door locks can¡¯t be open, default is uncheck the check-in time. If initial this function, need to set the lock time frequently. Check-in time is forced to be current computer time when issued.
+Check the check-in time: In order to avoid the door locks canï¿½ï¿½t be open, default is uncheck the check-in time. If initial this function, need to set the lock time frequently. Check-in time is forced to be current computer time when issued.
 
 5.Lock number format: 1.2.8203; If it is a suite room, there will be a letter after the lock number, e.g.1.2.8203.A.Attention: In the old version of Dlock, lock number format is like 102 or 20105A, or A0203,etc. If there is no lock number, please type in. Further details refer to GHUST ROOM SETTING-ROOM INFORMATION.
 
@@ -32,9 +32,9 @@ Check the check-in time: In order to avoid the door locks can¡¯t be open, defaul
 
 9. If Guest Card made by the interface cannot open the lock, the problem can be found out by comparing with Guest Cards made by the door lock management software. When comparing, please pay attention to the difference of lock number and checkin time.
 
-10.Card making records save in the ¡°cardRecord.ini¡±. Remark=new means new card, remark=copy means copy card; openBlock=1 means open DBlock,; checkEN=1 means check the check-in time; Single=1 means one time open lock; oldCopyMode =1 means eLock use the old way to copy card. Records can be read by the portable tools.
+10.Card making records save in the ï¿½ï¿½cardRecord.iniï¿½ï¿½. Remark=new means new card, remark=copy means copy card; openBlock=1 means open DBlock,; checkEN=1 means check the check-in time; Single=1 means one time open lock; oldCopyMode =1 means eLock use the old way to copy card. Records can be read by the portable tools.
 
-11. Lock Malfunction Prompt (read unlocking card, take it away and notice how many ¡°di¡± it sounds)
+11. Lock Malfunction Prompt (read unlocking card, take it away and notice how many ï¿½ï¿½diï¿½ï¿½ it sounds)
 
 1 di: wrong time
 2 di: deadbolt extends
@@ -42,9 +42,9 @@ Check the check-in time: In order to avoid the door locks can¡¯t be open, defaul
 4 di: card is canceled
 5 di: wrong card password
 6 di: wrong Authorization Card
-7 di: Recovering Card hasn¡¯t been read
+7 di: Recovering Card hasnï¿½ï¿½t been read
 
-¡ôReturned Value Description
+ï¿½ï¿½Returned Value Description
 
 enum ERROR_TYPE
 {
@@ -66,21 +66,21 @@ enum ERROR_TYPE
     ERR_NO_CLIENT_DATA  =   -30,     // no Authorization Card data
     ERR_ROOMS_CNT_OVER  =   -31,    // Room number exceeds available card subarea 
 
-¡ôInterface function declaration
+ï¿½ï¿½Interface function declaration
 /*=============================================================================
-Function name£º                        TP_Configuration;
+Function nameï¿½ï¿½                        TP_Configuration;
 Function: Interface Initialization configuration, to choose lock type or encoder connection etc
-Input: Lock_type¡ªlock type (i.e. card type) 
+Input: Lock_typeï¿½ï¿½lock type (i.e. card type) 
 Output: N/A
 Returned valude: error type
 =============================================================================*/
 int __stdcall TP_Configuration(int lock_type);
 
-¡ôInterface function declaration
+ï¿½ï¿½Interface function declaration
 /*=============================================================================
-Function name£º                        TP_Configuration;
+Function nameï¿½ï¿½                        TP_Configuration;
 Function: Interface Initialization configuration, to choose lock type or encoder connection etc
-Input: Lock_type¡ªlock type (i.e. card type) 
+Input: Lock_typeï¿½ï¿½lock type (i.e. card type) 
 Output: N/A
 Returned valude: error type
 =============================================================================*/
@@ -88,7 +88,7 @@ int __stdcall TP_Configuration(int lock_type);
 
 
 /*=============================================================================
-Function name£º                        TP_MakeGuestCard;
+Function nameï¿½ï¿½                        TP_MakeGuestCard;
 Function: to make Guest Card
 Input:   room_no         --  room number: character string, i.e. "1.2.8102" etc
         checkin_time    --  checkin time: year-month-day-minute-second character string "YYYY-MM-DD hh:mm:ss"
@@ -107,7 +107,7 @@ Example 1: room_no="001.002.00003.A", SDateTime="2008-06-06 12:30:59", EDateTime
 Example 2: room_no="203", SDateTime="2008-06-06 12:30:59", EDateTime="2008-06-07 12:00:00"
         iFlags=0
 Returned valude: error type
-Remark: door lock needs to be input room number. Please refer to ¡°Room information¡± in door lock management software for more setting details. 
+Remark: door lock needs to be input room number. Please refer to ï¿½ï¿½Room informationï¿½ï¿½ in door lock management software for more setting details. 
 =============================================================================*/
 int __stdcall TP_MakeGuestCard(char *card_snr, char *room_no, char *checkin_time,char *checkout_time, int iflags);
 
@@ -131,7 +131,7 @@ Function name:                        TP_CancelCard;
 Function: to return card
 Input: N/A
 Output:
-Output: card_snr ¨Ccard number: character string, at least pre-distribute 20 bytes
+Output: card_snr ï¿½Ccard number: character string, at least pre-distribute 20 bytes
 Returned valude: error type
 =============================================================================*/
 int __stdcall TP_CancelCard(char *card_snr);
@@ -140,7 +140,7 @@ int __stdcall TP_CancelCard(char *card_snr);
 Function name:                         TP_GetCardSnr;
 Function: to read card number (the individual serial number of the card)
 Input: N/A
-Output: card_snr ¨Ccard number: character string, at least pre-distribute 20 bytes
+Output: card_snr ï¿½Ccard number: character string, at least pre-distribute 20 bytes
 Returned valude: error type
 =============================================================================*/
 int __stdcall TP_GetCardSnr(char *card_snr);
@@ -153,7 +153,7 @@ int __stdcall TP_GetCardSnr(char *card_snr);
 Function name:                           TP_M1Active 
 Function: to activate card (read card number)
 Input: N/A
-Output: card_snr ¨Ccard number, 4 bytes (8 character strings)
+Output: card_snr ï¿½Ccard number, 4 bytes (8 character strings)
 Returned valude: error type
 Description: card activation
 =============================================================================*/

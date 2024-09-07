@@ -1,5 +1,6 @@
 import ctypes
 from ctypes import c_char_p, c_int, c_short, create_string_buffer
+import os
 
 class RIOO:
     """
@@ -14,7 +15,7 @@ class RIOO:
         - TP_GetCardSnr
     """
 
-    def __init__(self, dll_path='LockSDK.dll'):
+    def __init__(self, dll_path):
         """
         Initializes the RIOO class by loading the LockSDK.dll.
 
@@ -131,17 +132,18 @@ class RIOO:
 
 if __name__ == "__main__":
     # Example usage of the RIOO class
-    sdk_path = "rioo/LockSDK.dll"
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    sdk_path = current_dir + "\libs\LockSDK.dll"
     rioo = RIOO(sdk_path)
 
     # Configuring the lock
-    try:
-        print("Configuring lock...")
-        result = rioo.configure_lock(5)  # 5 is for "RF50 Card"
-        if result == 1:
-            print("Lock configured successfully.")
-    except Exception as e:
-        print(f"Error: {e}")
+    # try:
+    #     print("Configuring lock...")
+    #     result = rioo.configure_lock(5)  # 5 is for "RF50 Card"
+    #     if result == 1:
+    #         print("Lock configured successfully.")
+    # except Exception as e:
+    #     print(f"Error: {e}")
 
     # # Making a guest card
     # try:
