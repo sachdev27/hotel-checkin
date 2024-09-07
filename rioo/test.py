@@ -60,8 +60,8 @@ class RIOO:
         :param flags: Guest card options (default is 0).
         :return: Result code (1 for success, negative for error).
         """
-        card_snr = create_string_buffer(20)
-        result = self.dll.TP_MakeGuestCard(card_snr, room_no.encode(), checkin_time.encode(), checkout_time.encode(), c_short(flags))
+        card_snr = self.get_card_snr()
+        result = self.dll.TP_MakeGuestCard(card_snr.encode(), room_no.encode(), checkin_time.encode(), checkout_time.encode(), c_short(flags))
         self._check_error(result)
         return result
 
@@ -106,7 +106,8 @@ class RIOO:
         card_snr = create_string_buffer(20)
         result = self.dll.TP_GetCardSnr(card_snr)
         if result == 1:
-            return f"Card Serial Number: {card_snr.value.decode()}"
+            print(f"Card Serial Number: {card_snr.value.decode()}")
+            return card_snr.value.decode()
         else:
             self._check_error(result)
         return ""
@@ -137,30 +138,38 @@ if __name__ == "__main__":
     rioo = RIOO(sdk_path)
 
     # Configuring the lock
-    # try:
-    #     print("Configuring lock...")
-    #     result = rioo.configure_lock(5)  # 5 is for "RF50 Card"
-    #     if result == 1:
-    #         print("Lock configured successfully.")
-    # except Exception as e:
-    #     print(f"Error: {e}")
+    try:
+        print("Configuring lock...")
+        result = rioo.configure_lock(5)  # 5 is for "RF50 Card"
+        if result == 1:
+            print("Lock configured successfully.")
+    except Exception as e:
+        print(f"Error: {e}")
 
-    # # Making a guest card
-    # try:
-    #     print("Making guest card...")
-    #     result = rioo.make_guest_card("001.002.00028", "2024-09-01 12:00:00", "2024-09-02 12:00:00", 0)
-    #     if result == 1:
-    #         print("Guest card created successfully.")
-    # except Exception as e:
-    #     print(f"Error: {e}")
+    # Reading a guest card
+    try:
+        print("Reading guest card...")
+        card_details = rioo.read_guest_card()
+        print(card_details)
+    except Exception as e:
+        print(f"Error: {e}")
 
-    # # Reading a guest card
-    # try:
-    #     print("Reading guest card...")
-    #     card_details = rioo.read_guest_card()
-    #     print(card_details)
-    # except Exception as e:
-    #     print(f"Error: {e}")
+    # Making a guest card
+    try:
+        print("Making guest card...")
+        result = rioo.make_guest_card("001.002.00028", "2024-09-01 12:00:00", "2024-09-15 12:00:00", 0)
+        if result == 1:
+            print("Guest card created successfully.")
+    except Exception as e:
+        print(f"Error: {e}")
+
+    # Reading a guest card
+    try:
+        print("Reading guest card...")
+        card_details = rioo.read_guest_card()
+        print(card_details)
+    except Exception as e:
+        print(f"Error: {e}")
 
     # # Canceling a guest card
     # try:
