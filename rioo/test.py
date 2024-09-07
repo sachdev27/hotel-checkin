@@ -112,23 +112,33 @@ class RIOO:
             self._check_error(result)
         return ""
 
-    def _check_error(self, code: int):
-        """
-        Checks for errors in DLL function calls and raises exceptions if necessary.
+def _check_error(self, code: int):
+    """
+    Checks for errors in DLL function calls and raises exceptions if necessary.
 
-        :param code: The result code from the DLL function.
-        """
-        if code < 0:
-            errors = {
-                -1: "No card detected",
-                -2: "No encoder detected",
-                -3: "Invalid card",
-                -4: "Card type error",
-                -5: "Reading/writing error",
-                -6: "Port not open",
-                -29: "Unregistered error"
-            }
-            raise Exception(errors.get(code, f"Unknown error: {code}"))
+    :param code: The result code from the DLL function.
+    """
+    if code < 1:  # OPR_OK (1) is the only success case, others are errors
+        errors = {
+            -1: "No card detected",
+            -2: "No encoder detected",
+            -3: "Invalid card",
+            -4: "Card type error",
+            -5: "Reading or writing error",
+            -6: "Port not open",
+            -7: "End of data card",
+            -8: "Invalid parameter",
+            -9: "Invalid operation",
+            -10: "Other error",
+            -11: "Port is in use",
+            -12: "Communication error",
+            -20: "Customer code error",
+            -29: "Unregistered error",
+            -30: "No Authorization Card data",
+            -31: "Room number exceeds available card subarea"
+        }
+        error_message = errors.get(code, f"Unknown error: {code}")
+        raise Exception(f"Error Code {code}: {error_message}")
 
 
 if __name__ == "__main__":
