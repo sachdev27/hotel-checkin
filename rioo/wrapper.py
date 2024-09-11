@@ -92,7 +92,8 @@ class LockSDKManager:
 # Example usage
 if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    sdk_path = current_dir + "\exe\LockSDKWrapper.exe"
+    # sdk_path = current_dir + "\exe\LockSDKWrapper.exe"
+    sdk_path = current_dir + "\libs\LockSDKProgram.exe"
     sdk_manager = LockSDKManager(sdk_path)
 
     # Example: Configure lock
@@ -111,7 +112,7 @@ if __name__ == "__main__":
     checkout_time = tomorrow.replace(hour=12, minute=5, second=0).strftime("%Y-%m-%d %H:%M:%S")
     print(current_time,checkout_time)
     
-    result = sdk_manager.make_guest_card("001.002.00028", checkin_time=current_time, checkout_time=checkout_time)
+    result = sdk_manager.make_guest_card("001.001.00305", checkin_time=current_time, checkout_time=checkout_time)
     if result:
         print(result)
 
