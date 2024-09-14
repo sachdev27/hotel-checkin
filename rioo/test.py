@@ -21,7 +21,7 @@ class RIOO:
 
         :param dll_path: Path to the LockSDK.dll file. Default is 'LockSDK.dll'.
         """
-        self.dll = ctypes.CDLL(dll_path)
+        self.dll = ctypes.WinDLL(dll_path)
 
         # Define function signatures for each function we will use from the DLL
         self.dll.TP_Configuration.argtypes = [c_short]
@@ -61,7 +61,13 @@ class RIOO:
         :return: Result code (1 for success, negative for error).
         """
         card_snr = create_string_buffer(20)
-        result = self.dll.TP_MakeGuestCard(card_snr, room_no.encode(), checkin_time.encode(), checkout_time.encode(), c_short(flags))
+        result = self.dll.TP_MakeGuestCard(
+            card_snr,
+            room_no.encode('utf-8'),  # Encoding the room number
+            checkin_time.encode('utf-8'),
+            checkout_time.encode('utf-8'),
+            c_short(flags)
+        )
         self._check_error(result)
         return result
 
@@ -72,7 +78,7 @@ class RIOO:
         :return: Card details in a formatted string.
         """
         card_snr = create_string_buffer(20)
-        room_no = create_string_buffer(20)
+        room_no = create_string_buffer(50)
         checkin_time = create_string_buffer(30)
         checkout_time = create_string_buffer(30)
 

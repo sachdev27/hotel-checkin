@@ -1,162 +1,153 @@
 #ifndef __LOCK_SDK_H__
 #define __LOCK_SDK_H__
-   
 
 
-// 卡片错误 
+// Card Errors
 enum ERROR_TYPE
 {
-    OPR_OK              =   1,      // 操作成功
-    NO_CARD			    =   -1,     // 没检测到卡片
-    NO_RW_MACHINE	    =   -2,     // 没检测到读卡器
-    INVALID_CARD	    =   -3,     // 无效卡
-    CARD_TYPE_ERROR	    =   -4,     // 卡类型错误
-    RDWR_ERROR		    =   -5,     // 读写错误
-    PORT_NOT_OPEN	    =   -6,     // 端口未打开
-    END_OF_DATA_CARD    =   -7,     // 数据卡结束
-    INVALID_PARAMETER   =   -8,     // 无效参数
-    INVALID_OPR		    =   -9,     // 无效操作
-    OTHER_ERROR		    =   -10,    // 其它错误
-    PORT_IN_USED	    =   -11,    // 端口已被占用
-    COMM_ERROR		    =   -12,    // 通讯错误    
-    ERR_CLIENT          =   -20,    // 客户码错误    
-    ERR_NOT_REGISTERED  =   -29,    // 未注册
-    ERR_NO_CLIENT_DATA  =   -30,     // 无授权卡信息
-    ERR_ROOMS_CNT_OVER  =   -31,    // 房数超出了可用扇区
-}; 
+    OPR_OK              =   1,      // Operation successful
+    NO_CARD			    =   -1,     // No card detected
+    NO_RW_MACHINE	    =   -2,     // No card reader detected
+    INVALID_CARD	    =   -3,     // Invalid card
+    CARD_TYPE_ERROR	    =   -4,     // Card type error
+    RDWR_ERROR		    =   -5,     // Read/write error
+    PORT_NOT_OPEN	    =   -6,     // Port not open
+    END_OF_DATA_CARD    =   -7,     // End of data card
+    INVALID_PARAMETER   =   -8,     // Invalid parameter
+    INVALID_OPR		    =   -9,     // Invalid operation
+    OTHER_ERROR		    =   -10,    // Other error
+    PORT_IN_USED	    =   -11,    // Port is in use
+    COMM_ERROR		    =   -12,    // Communication error
+    ERR_CLIENT          =   -20,    // Client code error
+    ERR_NOT_REGISTERED  =   -29,    // Not registered
+    ERR_NO_CLIENT_DATA  =   -30,    // No authorized card information
+    ERR_ROOMS_CNT_OVER  =   -31,    // Room count exceeds available sectors
+};
 
 
 #ifdef __cplusplus
-	extern "C" { 
+	extern "C" {
 #endif
 
 /*=============================================================================
-函数名：                        TP_Configuration
+Function Name:                   TP_Configuration
 ;
-功　能：动态库初始化配置, 完成门锁类型选择/发卡器连接等
-输  入：lock_type -- 门锁类型(也就是使用的卡片类型): 4-RF57门锁; 5-RF50门锁
-输  出: 无
-返回值：错误类型
+Functionality: Initialize dynamic library configuration, completing door lock type selection/card reader connection
+Input: lock_type -- Type of door lock (card type used): 4-RF57 door lock; 5-RF50 door lock
+Output: None
+Return value: Error type
 =============================================================================*/
 int __stdcall TP_Configuration(int lock_type);
 
 /*=============================================================================
-函数名：                        TP_MakeGuestCard
+Function Name:                   TP_MakeGuestCard
 ;
-功　能：制作宾客卡
-输  入：room_no         --  门锁号:     字符串, 例如 "001.002.00003.A",   "208" 等
-        checkin_time    --  入住时间：  年月日时分秒, 字符串格式 "YYYY-MM-DD hh:mm:ss"
-        checkout_time   --  预离时间：  年月日时分秒, 字符串格式 "YYYY-MM-DD hh:mm:ss"
-        iflags          --  宾客卡选项, 一般置0. iflags的各种赋值解释如下:
-        		      8:  表示复制卡, 不顶替前卡(可以跟之前发的卡片一起用, 允许一个房间发多张卡片)
-        		      32: 表示一次性开门, 开门后失效
-        		      128: 表示检测卡片的入住时间(如果卡片入住时间 > 门锁当前时间, 则不能开门, 不建议用这个选项)
-        		      
-        		      如果iflags ==0, 表示会顶替前卡,刷卡后之前的卡片失效; 不是一次性开门卡; 不检测卡片的入住时间
-   	
-输  出: card_snr        -- 卡号:        字符串, 至少预分配20字节
-例  子1: room_no="001.002.00003.A", SDateTime="2008-06-06 12:30:59", EDateTime="2008-06-07 12:00:00"
-        iFlags=8  !!!!!!!!(复制卡)
+Functionality: Create a guest card
+Input: room_no         --  Room lock number:  String, e.g., "001.002.00003.A", "208", etc.
+        checkin_time    --  Check-in time:  Date and time in string format "YYYY-MM-DD hh:mm:ss"
+        checkout_time   --  Expected check-out time:  Date and time in string format "YYYY-MM-DD hh:mm:ss"
+        iflags          --  Guest card options, generally set to 0. Explanations for various iflags values:
+        		      8:  Indicates a duplicate card, does not override the previous card (multiple cards can be issued for one room)
+        		      32: Indicates a one-time use card, invalid after one use
+        		      128: Indicates checking card check-in time (if the card's check-in time is > current lock time, the card cannot open the door, not recommended)
 
-例  子2: room_no="203", SDateTime="2008-06-06 12:30:59", EDateTime="2008-06-07 12:00:00"
-        iFlags=0
+        		      if iflags == 0, the previous card is invalidated upon swiping; it's not a one-time use card; check-in time is not verified
 
-返回值：错误类型
-说明:   Room要输入 门锁号!!  其格式视门锁管理软件而定, 请查看门锁管理软件的"客房设置"界面. 如果门锁管理软件中没有门锁号, 
-        则请输入房号. 
+Output: card_snr        -- Card number:  String, preallocate at least 20 bytes
+Example 1: room_no="001.002.00003.A", checkin_time="2008-06-06 12:30:59", checkout_time="2008-06-07 12:00:00"
+           iFlags=8  (Duplicate card)
+
+Example 2: room_no="203", checkin_time="2008-06-06 12:30:59", checkout_time="2008-06-07 12:00:00"
+           iFlags=0
+
+Return value: Error type
+Note: Room number must be entered as the door lock number!! Format depends on the lock management software. Please check the "Room Settings" interface of the lock management software. If the software does not have a lock number, enter the room number.
 =============================================================================*/
 int __stdcall TP_MakeGuestCard(char *card_snr, char *room_no, char *checkin_time,char *checkout_time, int iflags);
 
-
-
 /*=============================================================================
-函数名：                        TP_ReadGuestCard
+Function Name:                   TP_ReadGuestCard
 ;
-功　能：读宾客卡信息
-输  入：无。
-输  出: card_snr        --  卡号:       字符串, 至少预分配20字节
-        room_no         --  房号:       字符串, 至少预分配20字节
-        checkin_time    --  入住时间：  年月日时分秒, 字符串格式 "YYYY-MM-DD hh:mm:ss", 至少预分配30字节
-        checkout_time   --  预离时间：  年月日时分秒, 字符串格式 "YYYY-MM-DD hh:mm:ss", 至少预分配30字节
-返回值：错误类型
+Functionality: Read guest card information
+Input: None.
+Output: card_snr        --  Card number:  String, preallocate at least 20 bytes
+        room_no         --  Room number:  String, preallocate at least 20 bytes
+        checkin_time    --  Check-in time:  Date and time in string format "YYYY-MM-DD hh:mm:ss", preallocate at least 30 bytes
+        checkout_time   --  Expected check-out time:  Date and time in string format "YYYY-MM-DD hh:mm:ss", preallocate at least 30 bytes
+Return value: Error type
 =============================================================================*/
-int __stdcall	TP_ReadGuestCard(char *card_snr,char *room_no, char *checkin_time, char *checkout_time);
-
+int __stdcall	TP_ReadGuestCard(char *card_snr, char *room_no, char *checkin_time, char *checkout_time);
 
 /*=============================================================================
-函数名：                        TP_CancelCard
+Function Name:                   TP_CancelCard
 ;
-功　能：注销卡片/卡片回收
-输  入: 无
-输  出：
-输  出: card_snr    -- 卡号: 字符串, 至少预分配20字节
-返回值：错误类型
+Functionality: Deactivate/cancel a card
+Input: None
+Output: card_snr    -- Card number: String, preallocate at least 20 bytes
+Return value: Error type
 =============================================================================*/
 int __stdcall TP_CancelCard(char *card_snr);
 
 /*=============================================================================
-函数名：                        TP_GetCardSnr
+Function Name:                   TP_GetCardSnr
 ;
-功　能：读取卡号(卡片的唯一的序列号)
-输  入: 无
-输  出: card_snr    --  卡号: 字符串, 至少预分配20字节
-返回值：错误类型
+Functionality: Read the card number (unique serial number of the card)
+Input: None
+Output: card_snr    --  Card number: String, preallocate at least 20 bytes
+Return value: Error type
 =============================================================================*/
 int __stdcall TP_GetCardSnr(char *card_snr);
 
-
-
-////////////////////// 以下函数供酒管软件进行会员卡管理 ///////////////////////
 /*=============================================================================
-函数名：                TP_M1Active
-功　能：卡片激活(读取卡号)
-参　数：无
-输  出: card_snr -- 卡号, 4字节(字符串表示为8个字符)
-返回值：错误类型
-描　述：卡片激活
+Function Name:                   TP_M1Active
+Functionality: Activate the card (read card number)
+Input: None
+Output: card_snr -- Card number, 4 bytes (represented as 8 characters in string form)
+Return value: Error type
+Description: Card activation
 =============================================================================*/
 int __stdcall TP_M1Active(char *card_snr);
 
 /*=============================================================================
-函数名：                TP_M1AuthKey
-功　能：验证卡片密钥
-参　数：keyA:	    密钥, 六字节, 卡片的默认密钥是 "ffffffffffff"
-		sector_no: 扇区号, 1~40 
-返回值：错误类型
-描　述：验证卡片的相应扇区的密钥, 验证过后才可以读写
+Function Name:                   TP_M1AuthKey
+Functionality: Verify card key
+Input: keyA:    Key, six bytes, default card key is "ffffffffffff"
+        sector_no: Sector number, 1~40
+Return value: Error type
+Description: Verify the key of the corresponding sector of the card; must verify before reading/writing
 =============================================================================*/
 int __stdcall TP_M1AuthKey(char *keyA, UINT sector_no);
 
 /*=============================================================================
-函数名：                TP_M1SetKeyA
-功　能：修改密钥A
-参　数：NewKeyA:	新密钥A, 六字节, 用字符串表示(12个字符)
-		sector_no:	扇区号
-返回值：错误类型
-描　述：修改卡片密钥A, 注意要先用AuthKey验证原密钥. 注意函数调用顺序:
+Function Name:                   TP_M1SetKeyA
+Functionality: Modify Key A
+Input: NewKeyA:   New Key A, six bytes, represented as a string (12 characters)
+        sector_no: Sector number
+Return value: Error type
+Description: Modify card Key A. Must use AuthKey to verify the original key first. Call functions in the following sequence:
         TP_M1Active  →  TP_M1AuthKey  →  TP_M1SetKeyA
 =============================================================================*/
 int __stdcall TP_M1SetKeyA(char *newKeyA, UINT sector_no);
 
 /*=============================================================================
-函数名：                TP_M1WriteBlock
-功　能：写数据
-参　数：block_no:	块号(一般是扇区号*4 + 扇区内块号)
-		data:	要写入的16字节数据, 用字符串表示(32个字符)
-返回值：错误类型
-描　述：写一块数据. 必须先用TP_M1AuthKey验证密钥
-; 例如, 扇区9可以读写的块号包括: 9*4  9*4+1  9*4+2,  即: 36  37  38块.  注意函数调用顺序:
+Function Name:                   TP_M1WriteBlock
+Functionality: Write data
+Input: block_no: Block number (usually sector number * 4 + block number within the sector)
+        data: 16-byte data to write, represented as a string (32 characters)
+Return value: Error type
+Description: Write data to a block. Must verify the key using TP_M1AuthKey first.
+        For example, sector 9's writable block numbers include: 9*4, 9*4+1, 9*4+2, i.e., blocks 36, 37, 38. Follow function call order:
         TP_M1Active  →  TP_M1AuthKey  →  TP_M1WriteBlock
 =============================================================================*/
 int __stdcall TP_M1WriteBlock(UINT block_no, char *data);
 
 /*=============================================================================
-函数名：                TP_M1ReadBlock
-功　能：读数据
-参　数：block_no:	块号(一般是扇区号*4 +　扇区内块号)
-输  出: data:	16字节数据, 用字符串表示(32个字符)
-返回值：错误类型
-描　述：读取一块. 必须先用TP_M1AuthKey验证密钥.  注意函数调用顺序:
+Function Name:                   TP_M1ReadBlock
+Functionality: Read data
+Input: block_no: Block number (usually sector number * 4 + block number within the sector)
+Output: data: 16-byte data, represented as a string (32 characters)
+Return value: Error type
+Description: Read data from a block. Must verify the key using TP_M1AuthKey first. Follow function call order:
         TP_M1Active  →  TP_M1AuthKey  →  TP_M1ReadBlock
 =============================================================================*/
 int __stdcall TP_M1ReadBlock(UINT block_no, char *data);
