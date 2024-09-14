@@ -1,5 +1,6 @@
 import ctypes
 from ctypes import c_char_p, c_int, c_short, create_string_buffer
+import datetime
 import os
 
 class RIOO:
@@ -21,7 +22,9 @@ class RIOO:
 
         :param dll_path: Path to the LockSDK.dll file. Default is 'LockSDK.dll'.
         """
-        self.dll = ctypes.CDLL(dll_path)
+        # self.dll = ctypes.CDLL(dll_path)
+        self.dll = ctypes.WinDLL(dll_path)  # Use WinDLL instead of CDLL for calling stdcall functions (32-bit DLL)
+
 
         # Define function signatures for each function we will use from the DLL
         self.dll.TP_Configuration.argtypes = [c_short]
@@ -60,8 +63,8 @@ class RIOO:
         :param flags: Guest card options (default is 0).
         :return: Result code (1 for success, negative for error).
         """
-        card_snr = self.get_card_snr()
-        result = self.dll.TP_MakeGuestCard(card_snr.encode(), room_no.encode(), checkin_time.encode(), checkout_time.encode(), c_short(flags))
+        card_snr = create_string_buffer(20)
+        result = self.dll.TP_MakeGuestCard(card_snr, room_no.encode(), checkin_time.encode(), checkout_time.encode(), c_short(flags))
         self._check_error(result)
         return result
 
@@ -112,33 +115,45 @@ class RIOO:
             self._check_error(result)
         return ""
 
-def _check_error(self, code: int):
-    """
-    Checks for errors in DLL function calls and raises exceptions if necessary.
+    def generate_room_and_time(self,room_number: int, num_days: int):
+        # Format the room number as 001.001.00{room_number}
+        formatted_room_number = f"001.001.{room_number:05d}"
+        
+        # Get the current time for check-in
+        checkin_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Calculate the checkout time (num_days forward) and set the time as 12:05 PM
+        checkout_time = (datetime.datetime.now() + datetime.timedelta(days=num_days)).replace(hour=12, minute=5, second=0).strftime('%Y-%m-%d %H:%M:%S')
+        
+        return formatted_room_number, checkin_time, checkout_time
 
-    :param code: The result code from the DLL function.
-    """
-    if code < 1:  # OPR_OK (1) is the only success case, others are errors
-        errors = {
-            -1: "No card detected",
-            -2: "No encoder detected",
-            -3: "Invalid card",
-            -4: "Card type error",
-            -5: "Reading or writing error",
-            -6: "Port not open",
-            -7: "End of data card",
-            -8: "Invalid parameter",
-            -9: "Invalid operation",
-            -10: "Other error",
-            -11: "Port is in use",
-            -12: "Communication error",
-            -20: "Customer code error",
-            -29: "Unregistered error",
-            -30: "No Authorization Card data",
-            -31: "Room number exceeds available card subarea"
-        }
-        error_message = errors.get(code, f"Unknown error: {code}")
-        raise Exception(f"Error Code {code}: {error_message}")
+    def _check_error(self, code: int):
+        """
+        Checks for errors in DLL function calls and raises exceptions if necessary.
+
+        :param code: The result code from the DLL function.
+        """
+        if code < 1:  # OPR_OK (1) is the only success case, others are errors
+            errors = {
+                -1: "No card detected",
+                -2: "No encoder detected",
+                -3: "Invalid card",
+                -4: "Card type error",
+                -5: "Reading or writing error",
+                -6: "Port not open",
+                -7: "End of data card",
+                -8: "Invalid parameter",
+                -9: "Invalid operation",
+                -10: "Other error",
+                -11: "Port is in use",
+                -12: "Communication error",
+                -20: "Customer code error",
+                -29: "Unregistered error",
+                -30: "No Authorization Card data",
+                -31: "Room number exceeds available card subarea"
+            }
+            error_message = errors.get(code, f"Unknown error: {code}")
+            raise Exception(f"Error Code {code}: {error_message}")
 
 
 if __name__ == "__main__":
@@ -164,10 +179,22 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error: {e}")
 
+    # Canceling a guest card
+    try:
+        print("Canceling guest card...")
+        result = rioo.cancel_card()
+        if result == 1:
+            print("Guest card canceled successfully.")
+    except Exception as e:
+        print(f"Error: {e}")
+
     # Making a guest card
     try:
         print("Making guest card...")
-        result = rioo.make_guest_card("001.002.00028", "2024-09-01 12:00:00", "2024-09-15 12:00:00", 0)
+        room_no,checkin,checkout = rioo.generate_room_and_time(301,1)
+        # print(room_no,checkin,checkout)
+        # result = rioo.make_guest_card("001.001.00301", "2024-09-14 23:00:00", "2024-09-15 12:05:00",0)
+        result = rioo.make_guest_card(room_no,checkin,checkout)
         if result == 1:
             print("Guest card created successfully.")
     except Exception as e:
@@ -181,14 +208,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error: {e}")
 
-    # # Canceling a guest card
-    # try:
-    #     print("Canceling guest card...")
-    #     result = rioo.cancel_card()
-    #     if result == 1:
-    #         print("Guest card canceled successfully.")
-    # except Exception as e:
-    #     print(f"Error: {e}")
+
 
     # # Retrieving the card serial number
     # try:
