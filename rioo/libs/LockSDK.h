@@ -1,8 +1,8 @@
 #ifndef __LOCK_SDK_H__
 #define __LOCK_SDK_H__
-   
 
-// Card Errors 
+
+// Card Errors
 enum ERROR_TYPE
 {
     OPR_OK              =   1,      // Operation successful
@@ -17,16 +17,16 @@ enum ERROR_TYPE
     INVALID_OPR		    =   -9,     // Invalid operation
     OTHER_ERROR		    =   -10,    // Other error
     PORT_IN_USED	    =   -11,    // Port is in use
-    COMM_ERROR		    =   -12,    // Communication error    
-    ERR_CLIENT          =   -20,    // Client code error    
+    COMM_ERROR		    =   -12,    // Communication error
+    ERR_CLIENT          =   -20,    // Client code error
     ERR_NOT_REGISTERED  =   -29,    // Not registered
     ERR_NO_CLIENT_DATA  =   -30,    // No authorized card information
     ERR_ROOMS_CNT_OVER  =   -31,    // Room count exceeds available sectors
-}; 
+};
 
 
 #ifdef __cplusplus
-	extern "C" { 
+	extern "C" {
 #endif
 
 /*=============================================================================
@@ -50,9 +50,9 @@ Input: room_no         --  Room lock number:  String, e.g., "001.002.00003.A", "
         		      8:  Indicates a duplicate card, does not override the previous card (multiple cards can be issued for one room)
         		      32: Indicates a one-time use card, invalid after one use
         		      128: Indicates checking card check-in time (if the card's check-in time is > current lock time, the card cannot open the door, not recommended)
-        		      
+
         		      if iflags == 0, the previous card is invalidated upon swiping; it's not a one-time use card; check-in time is not verified
-   	
+
 Output: card_snr        -- Card number:  String, preallocate at least 20 bytes
 Example 1: room_no="001.002.00003.A", checkin_time="2008-06-06 12:30:59", checkout_time="2008-06-07 12:00:00"
            iFlags=8  (Duplicate card)
@@ -125,7 +125,7 @@ Input: NewKeyA:   New Key A, six bytes, represented as a string (12 characters)
         sector_no: Sector number
 Return value: Error type
 Description: Modify card Key A. Must use AuthKey to verify the original key first. Call functions in the following sequence:
-        TP_M1Active  →  TP_M1AuthKey  →  TP_M1SetKeyA
+        TP_M1Active  ��  TP_M1AuthKey  ��  TP_M1SetKeyA
 =============================================================================*/
 int __stdcall TP_M1SetKeyA(char *newKeyA, UINT sector_no);
 
@@ -137,7 +137,7 @@ Input: block_no: Block number (usually sector number * 4 + block number within t
 Return value: Error type
 Description: Write data to a block. Must verify the key using TP_M1AuthKey first.
         For example, sector 9's writable block numbers include: 9*4, 9*4+1, 9*4+2, i.e., blocks 36, 37, 38. Follow function call order:
-        TP_M1Active  →  TP_M1AuthKey  →  TP_M1WriteBlock
+        TP_M1Active  ��  TP_M1AuthKey  ��  TP_M1WriteBlock
 =============================================================================*/
 int __stdcall TP_M1WriteBlock(UINT block_no, char *data);
 
@@ -148,7 +148,7 @@ Input: block_no: Block number (usually sector number * 4 + block number within t
 Output: data: 16-byte data, represented as a string (32 characters)
 Return value: Error type
 Description: Read data from a block. Must verify the key using TP_M1AuthKey first. Follow function call order:
-        TP_M1Active  →  TP_M1AuthKey  →  TP_M1ReadBlock
+        TP_M1Active  ��  TP_M1AuthKey  ��  TP_M1ReadBlock
 =============================================================================*/
 int __stdcall TP_M1ReadBlock(UINT block_no, char *data);
 
