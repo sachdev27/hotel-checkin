@@ -1,5 +1,6 @@
 import ctypes
 from ctypes import c_char_p, c_int, c_short, create_string_buffer
+import datetime
 import os
 
 class RIOO:
@@ -21,7 +22,9 @@ class RIOO:
 
         :param dll_path: Path to the LockSDK.dll file. Default is 'LockSDK.dll'.
         """
-        self.dll = ctypes.CDLL(dll_path)
+        # self.dll = ctypes.CDLL(dll_path)
+        self.dll = ctypes.WinDLL(dll_path)  # Use WinDLL instead of CDLL for calling stdcall functions (32-bit DLL)
+
 
         # Define function signatures for each function we will use from the DLL
         self.dll.TP_Configuration.argtypes = [c_short]
@@ -50,11 +53,11 @@ class RIOO:
         self._check_error(result)
         return result
 
-    def make_guest_card(self, room_no: str, checkin_time: str, checkout_time: str, flags: int = 8) -> int:
+    def make_guest_card(self, room_no: str, checkin_time: str, checkout_time: str, flags: int = 0) -> int:
         """
         Creates a guest card with the provided room number, check-in, and check-out times.
 
-        :param room_no: Room number as a string (e.g., '001.002.00028').
+        :param room_no: Room number as a string (e.g., '001.002.00028') ---   001.005.00503 --> 1st building 5th floor Room No.503.
         :param checkin_time: Check-in time as a string in 'YYYY-MM-DD HH:MM:SS' format.
         :param checkout_time: Check-out time as a string in 'YYYY-MM-DD HH:MM:SS' format.
         :param flags: Guest card options (default is 0).
@@ -72,7 +75,7 @@ class RIOO:
         :return: Card details in a formatted string.
         """
         card_snr = create_string_buffer(20)
-        room_no = create_string_buffer(50)
+        room_no = create_string_buffer(20)
         checkin_time = create_string_buffer(30)
         checkout_time = create_string_buffer(30)
 
@@ -112,6 +115,18 @@ class RIOO:
             self._check_error(result)
         return ""
 
+    def generate_room_and_time(self,room_number: int, num_days: int):
+        # Format the room number as 001.001.00{room_number}
+        formatted_room_number = f"001.001.{room_number:05d}"
+        
+        # Get the current time for check-in
+        checkin_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Calculate the checkout time (num_days forward) and set the time as 12:05 PM
+        checkout_time = (datetime.datetime.now() + datetime.timedelta(days=num_days)).replace(hour=12, minute=5, second=0).strftime('%Y-%m-%d %H:%M:%S')
+        
+        return formatted_room_number, checkin_time, checkout_time
+
     def _check_error(self, code: int):
         """
         Checks for errors in DLL function calls and raises exceptions if necessary.
@@ -140,42 +155,65 @@ class RIOO:
             error_message = errors.get(code, f"Unknown error: {code}")
             raise Exception(f"Error Code {code}: {error_message}")
 
+
 if __name__ == "__main__":
     # Example usage of the RIOO class
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    sdk_path = os.path.join(current_dir, "libs", "LockSDK.dll")
+    sdk_path = current_dir + "\libs\LockSDK.dll"
     rioo = RIOO(sdk_path)
 
-    # # Configuring the lock
-    # try:
-    #     print("Configuring lock...")
-    #     result = rioo.configure_lock(5)  # 5 is for "RF50 Card"
-    #     if result == 1:
-    #         print("Lock configured successfully.")
-    # except Exception as e:
-    #     print(f"Error: {e}")
+    # Configuring the lock
+    try:
+        print("Configuring lock...")
+        result = rioo.configure_lock(5)  # 5 is for "RF50 Card"
+        if result == 1:
+            print("Lock configured successfully.")
+    except Exception as e:
+        print(f"Error: {e}")
 
-    # # Reading a guest card
-    # try:
-    #     print("Reading guest card...")
-    #     card_details = rioo.read_guest_card()
-    #     print(card_details)
-    # except Exception as e:
-    #     print(f"Error: {e}")
+    # Reading a guest card
+    try:
+        print("Reading guest card...")
+        card_details = rioo.read_guest_card()
+        print(card_details)
+    except Exception as e:
+        print(f"Error: {e}")
+
+    # Canceling a guest card
+    try:
+        print("Canceling guest card...")
+        result = rioo.cancel_card()
+        if result == 1:
+            print("Guest card canceled successfully.")
+    except Exception as e:
+        print(f"Error: {e}")
 
     # Making a guest card
     try:
         print("Making guest card...")
-        result = rioo.make_guest_card("001.001.00305", "2024-09-11 12:00:00", "2024-09-15 12:00:00")
+        room_no,checkin,checkout = rioo.generate_room_and_time(301,1)
+        # print(room_no,checkin,checkout)
+        # result = rioo.make_guest_card("001.001.00301", "2024-09-14 23:00:00", "2024-09-15 12:05:00",0)
+        result = rioo.make_guest_card(room_no,checkin,checkout)
         if result == 1:
             print("Guest card created successfully.")
     except Exception as e:
         print(f"Error: {e}")
 
-    # # Reading a guest card again
+    # Reading a guest card
+    try:
+        print("Reading guest card...")
+        card_details = rioo.read_guest_card()
+        print(card_details)
+    except Exception as e:
+        print(f"Error: {e}")
+
+
+
+    # # Retrieving the card serial number
     # try:
-    #     print("Reading guest card...")
-    #     card_details = rioo.read_guest_card()
-    #     print(card_details)
+    #     print("Getting card serial number...")
+    #     card_snr = rioo.get_card_snr()
+    #     print(card_snr)
     # except Exception as e:
     #     print(f"Error: {e}")
