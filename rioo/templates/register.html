@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register a Card</title>
+    <style>
+        /* General styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        h2 {
+            color: #34495e;
+            margin-bottom: 10px;
+        }
+        /* Styling the table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        td {
+            color: #555;
+        }
+
+        /* Dropdown styling */
+        select {
+            padding: 10px;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Button styling */
+        input[type="submit"] {
+            background-color: #27ae60;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #2ecc71;
+        }
+
+        /* Container for the form */
+        form {
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Links */
+        a {
+            text-decoration: none;
+            color: #2980b9;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            table, th, td {
+                font-size: 14px;
+            }
+            input[type="submit"], select {
+                width: 100%;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            table, th, td {
+                font-size: 12px;
+            }
+            input[type="submit"], select {
+                font-size: 12px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div>
+        <h1>Register a New Card</h1>
+
+        <!-- Display booking details in a table -->
+        <h2>Booking Details</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Guest Name</th>
+                    <th>Phone Number</th>
+                    <th>Room Number</th>
+                    <th>Check-In Date</th>
+                    <th>Check-Out Date</th>
+                    <th>Payment Mode</th>
+                    <th>Tariff</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>{{ record['Guest Name'] }}</td>
+                    <td>{{ record['Phone Number'] }}</td>
+                    <td>{{ record['Room Number'] }}</td>
+                    <td>{{ record['Check-In Date'] }}</td>
+                    <td>{{ record['Check-Out Date'] }}</td>
+                    <td>{{ record['Payment Mode'] }}</td>
+                    <td>{{ record['Tariff'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Dropdown to select a record -->
+        <h2>Select a Record to Generate a Card</h2>
+        <form method="POST">
+            <label for="record">Select a Record:</label>
+            <select name="record">
+                {% for record in records %}
+                    <option value="{{ record }}">{{ record['Guest Name'] }} - Room {{ record['Room Number'] }}</option>
+                {% endfor %}
+            </select>
+            <input type="submit" value="Generate Card">
+        </form>
+
+        <!-- Message for card generation status -->
+        <p>{{ message }}</p>
+
+        <a href="/status">Back to Status</a>
+    </div>
+</body>
+</html>
