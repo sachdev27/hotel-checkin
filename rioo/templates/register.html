@@ -293,6 +293,15 @@
         font-weight: bold;
         color: #2980b9;
     }
+
+    .error-message{
+        display:none;
+        color: red;
+        font-weight: bold;
+        font-size:xx-large;
+        text-align: center;
+        margin: 100px;
+    }
 </style>
 </head>
 <body>
@@ -351,7 +360,7 @@
         </div>
 
         <!-- Right Column: Reader status -->
-            <div class="col-4">
+        <div class="col-4">
                 <div class="status-box">
                     <div class="status-header">
                         <h2>Encoder Connection</h2>
@@ -364,8 +373,13 @@
                         <p>Status: <span id="reader-status"></span></p>
                     </div>
                 </div>
+
             <div class="loader-container">
                 <div class="loader" id="loader"></div>
+            </div>
+            <!-- Error message will be dynamically added here -->
+            <div class="error-message loader-container" id="error-message" >
+                <!-- Error message content will be dynamically inserted -->
             </div>
             <div class="card-details" id="card-details">
                 <h2>Guest Card Details</h2>
@@ -383,6 +397,20 @@
     </div>
 
     <script>
+        // Server-Sent Events to listen for updates from the Flask server
+        const eventSource = new EventSource('/stream');
+
+        eventSource.onmessage = function(event) {
+            const cardData = JSON.parse(event.data);
+            if (cardData.status === 'Success') {
+                document.getElementById("guest-name").textContent = cardData.guest_name;
+                document.getElementById("room-no").textContent = cardData.room_no;
+                document.getElementById("checkin-time").textContent = cardData.checkin_time;
+                document.getElementById("checkout-time").textContent = cardData.checkout_time;
+                document.getElementById("card-details").style.display = "block";
+            }
+        };
+
         function updateReaderStatus() {
             fetch('/status')
             .then(response => response.json())
@@ -407,10 +435,12 @@
                 }
             })
             .catch(error => console.error('Error fetching status:', error));
-    }
+            }
+            // Poll for reader status every 5 seconds
+            setInterval(updateReaderStatus, 1500);
 
-        // Poll for reader status every 5 seconds
-        setInterval(updateReaderStatus, 1000);
+
+        // Generate Crad Request
         document.getElementById("card-form").addEventListener("submit", function(event) {
             event.preventDefault();
 
@@ -433,6 +463,20 @@
             .then(data => {
                 // Hide loader
                 document.getElementById("loader").style.display = "none";
+
+                if (data.status === "Error") {
+                    // Hide success message and card details
+                    document.getElementById("success-message").style.display = "none";
+                    document.getElementById("card-details").style.display = "none";
+
+                    // Show error message inside the status-box
+                    const errorMessageElement = document.getElementById("error-message");
+                    errorMessageElement.textContent =  "Error creating card!";
+                    errorMessageElement.style.display = "block";  // Make the error message visible
+
+                    document.body.classList.remove('hidden');
+                    return;
+                }
                 document.body.classList.remove('hidden');
 
                 // Show card details

@@ -1,6 +1,6 @@
 import threading
 import time
-from flask import Flask, render_template, jsonify, request, redirect, url_for
+from flask import Flask, render_template, jsonify, request, redirect, url_for,Response
 import gspread
 from main import RIOO  # Assuming you have the RIOO class defined in a file named RIOO.py
 import os
@@ -8,6 +8,7 @@ from gcp import GoogleSheetHandler
 from datetime import datetime
 import config  # Assuming config contains your credentials for Google Sheets
 import logging
+import json
 app = Flask(__name__)
 
 # Set up the RIOO (LockSDK) interface
@@ -15,6 +16,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 sdk_path = current_dir + "\libs\LockSDK.dll"
 rioo = RIOO(sdk_path)
 ROOM_FORMAT = "001.001.{room_no:05d}"
+current_card_data = None
 
 # Set up Google Sheet handler
 google_sheet_handler = None
@@ -67,7 +69,7 @@ def fetch_reader_status():
         encoder_status = -1
         card_reader_status['status'] = "No Encoder Detected"
         card_reader_status["connection"] = "Down"
-    
+
     card_reader_status['error_code'] = encoder_status
     return card_reader_status
 
@@ -133,8 +135,18 @@ def get_status():
     response_data = card_status
     return jsonify(response_data)
 
+# Endpoint for Server-Sent Events to push updates to the local page
+@app.route('/stream')
+def stream():
+    def event_stream():
+        while True:
+            time.sleep(1)  # Stream updates every second
+            yield f"data: {json.dumps(current_card_data)}\n\n"
+    return Response(event_stream(), mimetype="text/event-stream")
+
 @app.route('/', methods=['GET', 'POST'])
 def register():
+    global current_card_data
     init_google_sheet_handler()
     # last_3_records = google_sheet_handler.get_last_n_records(100)
 
@@ -158,7 +170,7 @@ def register():
                     return jsonify({
                         "status" : "Error",
                         "message": error_msg
-                    }) 
+                    })
 
             except Exception as e:
                 logging.error("Error: Encoder or Card Not Detected!")
@@ -166,12 +178,12 @@ def register():
             try:
                 status = fetch_card_status()
                 print(status)
-                error_msg = _check_error(status['error_code']) 
+                error_msg = _check_error(status['error_code'])
                 if error_msg:
                     return jsonify({
                         "status" : "Error",
                         "message": error_msg
-                    }) 
+                    })
 
             except Exception as e:
                 logging.error("Error: Encoder or Card Not Detected!")
@@ -180,12 +192,13 @@ def register():
                 # Generate guest card using the selected record's room number and checkout time
                 card_creation_status = clear_and_create_guest_card(room_no=room_no,checkin_time=checkin_time,checkout_time=checkout_time)
                 if card_creation_status:
-                    return jsonify({
+                    current_card_data =  jsonify({
                         "guest_name": selected_record['Guest Name'],
                         "room_no": selected_record['Room Number'],
                         "checkin_time": checkin_time,
                         "checkout_time": checkout_time
                     })
+                    return current_card_data
                 else:
                     return jsonify({
                         "status" : "Error",
