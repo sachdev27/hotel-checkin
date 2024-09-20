@@ -128,12 +128,13 @@ def _check_error(code: int):
 @app.route('/status', methods=['GET'])
 def get_status():
     card_status = fetch_reader_status()
-    # card_detail = fetch_card_details()
-
-    # Merging both dictionaries using unpacking
-    # response_data = {**card_status, **(card_detail if card_detail else {})}
     response_data = card_status
     return jsonify(response_data)
+
+@app.route('/read', methods=['GET'])
+def read_card():
+    card_details = fetch_card_details()
+    return jsonify(card_details)
 
 
 @app.route('/', methods=['GET', 'POST'])

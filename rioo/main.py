@@ -81,10 +81,12 @@ class RIOO:
 
         result = self.dll.TP_ReadGuestCard(card_snr, room_no, checkin_time, checkout_time)
         if result == 1:
-            return (f"Card Serial Number: {card_snr.value.decode()}\n"
-                    f"Room Number: {room_no.value.decode()}\n"
-                    f"Check-in Time: {checkin_time.value.decode()}\n"
-                    f"Check-out Time: {checkout_time.value.decode()}")
+            return {
+                "Card Serial Number": card_snr.value.decode(),
+                "Room Number": room_no.value.decode(),
+                "Check-in Time": checkin_time.value.decode(),
+                "Check-out Time": checkout_time.value.decode()
+            }
         else:
             self._check_error(result)
         return ""
