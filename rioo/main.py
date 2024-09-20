@@ -42,7 +42,7 @@ class RIOO:
         self.dll.TP_GetCardSnr.argtypes = [ctypes.POINTER(ctypes.c_char)]
         self.dll.TP_GetCardSnr.restype = c_int
 
-    def configure_lock(self, lock_type: int) -> int:
+    def configure_lock(self, lock_type: int = 5) -> int:
         """
         Configures the lock type.
 
@@ -118,13 +118,13 @@ class RIOO:
     def generate_room_and_time(self,room_number: int, num_days: int):
         # Format the room number as 001.001.00{room_number}
         formatted_room_number = f"001.001.{room_number:05d}"
-        
+
         # Get the current time for check-in
         checkin_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+
         # Calculate the checkout time (num_days forward) and set the time as 12:05 PM
         checkout_time = (datetime.datetime.now() + datetime.timedelta(days=num_days)).replace(hour=12, minute=5, second=0).strftime('%Y-%m-%d %H:%M:%S')
-        
+
         return formatted_room_number, checkin_time, checkout_time
 
     def _check_error(self, code: int):
