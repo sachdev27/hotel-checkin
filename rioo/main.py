@@ -114,6 +114,22 @@ class RIOO:
         else:
             self._check_error(result)
         return ""
+    
+    def get_card_status(self) -> int:
+        """
+        Retrieves the card's serial number.
+
+        :return: The card's serial number as a string.
+        """
+        card_snr = create_string_buffer(20)
+        result = self.dll.TP_GetCardSnr(card_snr)
+        if result == 1:
+            return result
+        else:
+            self._check_error(result)
+            return -2
+    
+    
 
     def generate_room_and_time(self,room_number: int, num_days: int):
         # Format the room number as 001.001.00{room_number}
@@ -172,45 +188,45 @@ if __name__ == "__main__":
         print(f"Error: {e}")
 
     # Reading a guest card
-    try:
-        print("Reading guest card...")
-        card_details = rioo.read_guest_card()
-        print(card_details)
-    except Exception as e:
-        print(f"Error: {e}")
+    # try:
+    #     print("Reading guest card...")
+    #     card_details = rioo.read_guest_card()
+    #     print(card_details)
+    # except Exception as e:
+    #     print(f"Error: {e}")
 
-    # Canceling a guest card
-    try:
-        print("Canceling guest card...")
-        result = rioo.cancel_card()
-        if result == 1:
-            print("Guest card canceled successfully.")
-    except Exception as e:
-        print(f"Error: {e}")
+    # # Canceling a guest card
+    # try:
+    #     print("Canceling guest card...")
+    #     result = rioo.cancel_card()
+    #     if result == 1:
+    #         print("Guest card canceled successfully.")
+    # except Exception as e:
+    #     print(f"Error: {e}")
 
-    # Making a guest card
-    try:
-        print("Making guest card...")
-        room_no,checkin,checkout = rioo.generate_room_and_time(301,1)
-        # print(room_no,checkin,checkout)
-        # result = rioo.make_guest_card("001.001.00301", "2024-09-14 23:00:00", "2024-09-15 12:05:00",0)
-        result = rioo.make_guest_card(room_no,checkin,checkout)
-        if result == 1:
-            print("Guest card created successfully.")
-    except Exception as e:
-        print(f"Error: {e}")
+    # # Making a guest card
+    # try:
+    #     print("Making guest card...")
+    #     room_no,checkin,checkout = rioo.generate_room_and_time(301,1)
+    #     # print(room_no,checkin,checkout)
+    #     # result = rioo.make_guest_card("001.001.00301", "2024-09-14 23:00:00", "2024-09-15 12:05:00",0)
+    #     result = rioo.make_guest_card(room_no,checkin,checkout)
+    #     if result == 1:
+    #         print("Guest card created successfully.")
+    # except Exception as e:
+    #     print(f"Error: {e}")
 
-    # Reading a guest card
-    try:
-        print("Reading guest card...")
-        card_details = rioo.read_guest_card()
-        print(card_details)
-    except Exception as e:
-        print(f"Error: {e}")
+    # # Reading a guest card
+    # try:
+    #     print("Reading guest card...")
+    #     card_details = rioo.read_guest_card()
+    #     print(card_details)
+    # except Exception as e:
+    #     print(f"Error: {e}")
 
 
 
-    # # Retrieving the card serial number
+    # Retrieving the card serial number
     # try:
     #     print("Getting card serial number...")
     #     card_snr = rioo.get_card_snr()
