@@ -135,18 +135,10 @@ def get_status():
     response_data = card_status
     return jsonify(response_data)
 
-# Endpoint for Server-Sent Events to push updates to the local page
-@app.route('/stream')
-def stream():
-    def event_stream():
-        while True:
-            time.sleep(1)  # Stream updates every second
-            yield f"data: {json.dumps(current_card_data)}\n\n"
-    return Response(event_stream(), mimetype="text/event-stream")
 
 @app.route('/', methods=['GET', 'POST'])
 def register():
-    global current_card_data
+    global current_card_data 
     init_google_sheet_handler()
     # last_3_records = google_sheet_handler.get_last_n_records(100)
 
@@ -174,6 +166,11 @@ def register():
 
             except Exception as e:
                 logging.error("Error: Encoder or Card Not Detected!")
+                return jsonify({
+                    "status" : "Error",
+                    "message": error_msg
+                })
+
             # Fetch Card Status
             try:
                 status = fetch_card_status()
@@ -187,6 +184,10 @@ def register():
 
             except Exception as e:
                 logging.error("Error: Encoder or Card Not Detected!")
+                return jsonify({
+                    "status" : "Error",
+                    "message": error_msg
+                })
 
             try:
                 # Generate guest card using the selected record's room number and checkout time
@@ -214,7 +215,7 @@ def register():
 
     # Get the last 3 records from Google Sheets
     try:
-        last_3_records = google_sheet_handler.get_last_n_records(100)
+        last_3_records = google_sheet_handler.get_last_n_records(5)
     except Exception as e:
         return render_template('register.html', message=f"Error fetching records: {e}", records=[])
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register a New Card</title>
+    <title>Hotel Aura</title>
     <style>
         /* General styling */
         body {
@@ -321,6 +321,7 @@
             <table>
                 <thead>
                     <tr>
+                        <th>Check-In Time</th>
                         <th>Guest Name</th>
                         <th>Phone Number</th>
                         <th>Room Number</th>
@@ -332,6 +333,7 @@
                 <tbody>
                     {% for record in records %}
                     <tr>
+                        <td>{{ record['Timestamp'] }}</td>
                         <td>{{ record['Guest Name'] }}</td>
                         <td>{{ record['Phone Number'] }}</td>
                         <td>{{ record['Room Number'] }}</td>
@@ -347,7 +349,7 @@
             <h3>Select a Record to Generate Card</h3>
             <form id="card-form" method="POST">
                 <select name="record">
-                    {% for record in records %}
+                    {% for record in records | reverse %}
                         <option value="{{ record }}">{{ record['Guest Name'] }} - Room {{ record['Room Number'] }}</option>
                     {% endfor %}
                 </select>
@@ -397,19 +399,6 @@
     </div>
 
     <script>
-        // Server-Sent Events to listen for updates from the Flask server
-        const eventSource = new EventSource('/stream');
-
-        eventSource.onmessage = function(event) {
-            const cardData = JSON.parse(event.data);
-            if (cardData.status === 'Success') {
-                document.getElementById("guest-name").textContent = cardData.guest_name;
-                document.getElementById("room-no").textContent = cardData.room_no;
-                document.getElementById("checkin-time").textContent = cardData.checkin_time;
-                document.getElementById("checkout-time").textContent = cardData.checkout_time;
-                document.getElementById("card-details").style.display = "block";
-            }
-        };
 
         function updateReaderStatus() {
             fetch('/status')
@@ -477,6 +466,8 @@
                     document.body.classList.remove('hidden');
                     return;
                 }
+                const errorMessageElement = document.getElementById("error-message");
+                errorMessageElement.style.display = "none";  // Make the error message invisible
                 document.body.classList.remove('hidden');
 
                 // Show card details
