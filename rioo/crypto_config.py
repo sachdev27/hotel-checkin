@@ -3,7 +3,9 @@ import os
 from cryptography.fernet import Fernet
 
 def decrypt_file(encrypted_file_path, output_file_path='config.py'):
-    with open('secret.key', 'rb') as key_file:
+    current_dir = os.path.abspath(os.path.dirname(__file__))  # Get the absolute path of the current directory
+    secret_path = os.path.join(current_dir, "secret.key") 
+    with open(secret_path, 'rb') as key_file:
         key = key_file.read()
 
     fernet = Fernet(key)

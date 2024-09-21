@@ -13,6 +13,8 @@ from crypto_config import *
 # Set up the RIOO (LockSDK) interface
 current_dir = os.path.abspath(os.path.dirname(__file__))  # Get the absolute path of the current directory
 sdk_path = os.path.join(current_dir, "libs", "LockSDK.dll")  # Use os.path.join() to ensure cross-platform compatibility
+config_encrypted_path = os.path.join(current_dir, "config.py.enc") 
+config_path = os.path.join(current_dir, "config.py") 
 
 # Check if the DLL exists at the specified path
 if not os.path.exists(sdk_path):
@@ -277,7 +279,7 @@ def register():
 
 # Main function to run the Flask app
 if __name__ == "__main__":
-    decrypt_file("config.py.enc")
+    decrypt_file(config_encrypted_path)
     config = import_config("config.py")
     set_config_parm(config)
     # Import the decrypted config.py
