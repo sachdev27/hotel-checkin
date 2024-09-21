@@ -1,5 +1,3 @@
-import socket
-import time
 from flask import Flask, render_template, jsonify, request,abort
 from main import RIOO  # Assuming you have the RIOO class defined in a file named RIOO.py
 import os
@@ -7,8 +5,7 @@ from gcp import GoogleSheetHandler
 from datetime import datetime
 import config  # Assuming config contains your credentials for Google Sheets
 import logging
-import json
-import ctypes
+from ngrok import start_ngrok
 from plyer import notification
 app = Flask(__name__)
 
@@ -20,9 +17,8 @@ sdk_path = os.path.join(current_dir, "libs", "LockSDK.dll")  # Use os.path.join(
 if not os.path.exists(sdk_path):
     raise FileNotFoundError(f"LockSDK.dll not found at {sdk_path}")
 
-# rioo = RIOO(sdk_path)
+rioo = RIOO(sdk_path)
 ROOM_FORMAT = "001.001.{room_no:05d}"
-LOCALIP = "127.0.0.1"
 # Define a custom header and token for verification
 VALID_CUSTOM_HEADER = "X-Custom-Header"
 current_card_data = None
@@ -56,10 +52,7 @@ def handle_request(request):
         abort(405)
 
 def check_if_local_request(request):
-    client_ip = request.remote_addr
-    local_ip = LOCALIP
-    print(client_ip,local_ip)
-    return client_ip == local_ip
+    return False if  'ngrok' in request.host else True
 
 def show_notification(title, message):
     """
@@ -68,7 +61,7 @@ def show_notification(title, message):
     notification.notify(
         title=title,
         message=message,
-        app_name='',
+        app_name='Card Created',
         timeout=30  # Duration in seconds
     )
 
@@ -179,12 +172,12 @@ def read_card():
 
 @app.route('/', methods=['GET', 'POST'])
 def register():
-    if not check_if_local_request(request=request): handle_request(request=request)
+    if not check_if_local_request(request=request) : handle_request(request=request)
 
     global current_card_data
     init_google_sheet_handler()
 
-    if request.method == 'POST':
+    if request.method == 'POST': 
         # Get selected record from the form
         selected_record = request.form.get('record')
         # print(selected_record)
@@ -194,6 +187,9 @@ def register():
             room_no,checkin_time,checkout_time = set_date_and_room(selected_record=selected_record)
             # Use selected record to generate the card
 
+            # message = f"Guest: {selected_record['Guest Name']}\nRoom: {room_no}\nCheck-in: {checkin_time}\nCheck-out: {checkout_time}"
+            # show_notification("Card Created", message)
+            
             print(selected_record['Guest Name'],room_no,checkin_time,checkout_time)
             # Return JSON response to update the loader and card details
             try:
@@ -271,4 +267,5 @@ def register():
 
 # Main function to run the Flask app
 if __name__ == "__main__":
+    start_ngrok()
     app.run(debug=True,port=80)
