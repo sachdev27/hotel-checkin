@@ -218,8 +218,7 @@ def register():
             try:
                 status = fetch_reader_status()
                 print(status)
-                error_msg = _check_error(status['error_code'])
-                if error_msg:
+                if status['error_code'] != 1:
                     show_notification("Error Creating Card!", status['status'])
                     return jsonify({
                         "status" : "Error",
@@ -237,9 +236,7 @@ def register():
             # Fetch Card Status
             try:
                 status = fetch_card_status()
-                print(status)
-                error_msg = _check_error(status['error_code'])
-                if error_msg:
+                if status['error_code'] != 1:
                     show_notification("Error Creating Card!", status['status']) 
                     return jsonify({
                         "status" : "Error",
@@ -264,11 +261,10 @@ def register():
                         "checkin_time": checkin_time,
                         "checkout_time": checkout_time
                     })
-
+                    
                     # Show a notification with the card details
-                    message = f"Guest: {current_card_data['guest_name']}\nRoom: {current_card_data['room_no']}\nCheck-in: {current_card_data['checkin_time']}\nCheck-out: {current_card_data['checkout_time']}"
+                    message = f"Guest: {selected_record['Guest Name']}\nRoom: {room_no}\nCheck-in: {checkin_time}\nCheck-out: {checkout_time}"
                     show_notification("Card Created", message)
-
                     return current_card_data
                 else:
                     show_notification("Card Created", "Failed creating guest card!")
