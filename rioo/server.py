@@ -3,11 +3,12 @@ from main import RIOO  # Assuming you have the RIOO class defined in a file name
 import os
 from gcp import GoogleSheetHandler
 from datetime import datetime
-import config  # Assuming config contains your credentials for Google Sheets
 import logging
 from ngrok import start_ngrok
 from plyer import notification
 app = Flask(__name__)
+from crypto_config import *
+
 
 # Set up the RIOO (LockSDK) interface
 current_dir = os.path.abspath(os.path.dirname(__file__))  # Get the absolute path of the current directory
@@ -21,17 +22,26 @@ rioo = RIOO(sdk_path)
 ROOM_FORMAT = "001.001.{room_no:05d}"
 # Define a custom header and token for verification
 VALID_CUSTOM_HEADER = "X-Custom-Header"
-current_card_data = None
+GOOGLE_CHECKIN_FORM_SPREADSHEET_ID = None
+CREDENTIALS = None
+VALID_TOKEN = None
 
 # Set up Google Sheet handler
 google_sheet_handler = None
+
+def set_config_parm(config):
+    global GOOGLE_CHECKIN_FORM_SPREADSHEET_ID,CREDENTIALS,VALID_TOKEN
+    GOOGLE_CHECKIN_FORM_SPREADSHEET_ID = config.GOOGLE_CHECKIN_FORM_SPREADSHEET_ID
+    CREDENTIALS = config.CREDENTIALS
+    VALID_TOKEN = config.VALID_TOKEN
+    os.remove("config.py")
 
 def init_google_sheet_handler():
     global google_sheet_handler
     try:
         if google_sheet_handler is None:
-            credentials = config.CREDENTIALS
-            sheet_id = config.GOOGLE_CHECKIN_FORM_SPREADSHEET_ID
+            credentials = CREDENTIALS
+            sheet_id = GOOGLE_CHECKIN_FORM_SPREADSHEET_ID
             google_sheet_handler = GoogleSheetHandler(credentials, sheet_id)
         google_sheet_handler.open_sheet()
     except Exception as e:
@@ -41,7 +51,7 @@ def handle_request(request):
     # Verify the custom header exists and matches the valid token
     if request.method == 'POST':
         custom_header_value = request.headers.get(VALID_CUSTOM_HEADER)
-        if custom_header_value == config.VALID_TOKEN:
+        if custom_header_value == VALID_TOKEN:
             # Process the request
             return
         else:
@@ -267,5 +277,9 @@ def register():
 
 # Main function to run the Flask app
 if __name__ == "__main__":
+    decrypt_file("config.py.enc")
+    config = import_config("config.py")
+    set_config_parm(config)
+    # Import the decrypted config.py
     start_ngrok()
     app.run(debug=True,port=80)
