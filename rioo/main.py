@@ -42,7 +42,7 @@ class RIOO:
         self.dll.TP_GetCardSnr.argtypes = [ctypes.POINTER(ctypes.c_char)]
         self.dll.TP_GetCardSnr.restype = c_int
 
-    def configure_lock(self, lock_type: int) -> int:
+    def configure_lock(self, lock_type: int = 5) -> int:
         """
         Configures the lock type.
 
@@ -81,10 +81,12 @@ class RIOO:
 
         result = self.dll.TP_ReadGuestCard(card_snr, room_no, checkin_time, checkout_time)
         if result == 1:
-            return (f"Card Serial Number: {card_snr.value.decode()}\n"
-                    f"Room Number: {room_no.value.decode()}\n"
-                    f"Check-in Time: {checkin_time.value.decode()}\n"
-                    f"Check-out Time: {checkout_time.value.decode()}")
+            return {
+                "Card Serial Number": card_snr.value.decode(),
+                "Room Number": room_no.value.decode(),
+                "Check-in Time": checkin_time.value.decode(),
+                "Check-out Time": checkout_time.value.decode()
+            }
         else:
             self._check_error(result)
         return ""
@@ -114,17 +116,33 @@ class RIOO:
         else:
             self._check_error(result)
         return ""
+    
+    def get_card_status(self) -> int:
+        """
+        Retrieves the card's serial number.
+
+        :return: The card's serial number as a string.
+        """
+        card_snr = create_string_buffer(20)
+        result = self.dll.TP_GetCardSnr(card_snr)
+        if result == 1:
+            return result
+        else:
+            self._check_error(result)
+            return -2
+    
+    
 
     def generate_room_and_time(self,room_number: int, num_days: int):
         # Format the room number as 001.001.00{room_number}
         formatted_room_number = f"001.001.{room_number:05d}"
-        
+
         # Get the current time for check-in
         checkin_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+
         # Calculate the checkout time (num_days forward) and set the time as 12:05 PM
         checkout_time = (datetime.datetime.now() + datetime.timedelta(days=num_days)).replace(hour=12, minute=5, second=0).strftime('%Y-%m-%d %H:%M:%S')
-        
+
         return formatted_room_number, checkin_time, checkout_time
 
     def _check_error(self, code: int):
@@ -172,45 +190,45 @@ if __name__ == "__main__":
         print(f"Error: {e}")
 
     # Reading a guest card
-    try:
-        print("Reading guest card...")
-        card_details = rioo.read_guest_card()
-        print(card_details)
-    except Exception as e:
-        print(f"Error: {e}")
+    # try:
+    #     print("Reading guest card...")
+    #     card_details = rioo.read_guest_card()
+    #     print(card_details)
+    # except Exception as e:
+    #     print(f"Error: {e}")
 
-    # Canceling a guest card
-    try:
-        print("Canceling guest card...")
-        result = rioo.cancel_card()
-        if result == 1:
-            print("Guest card canceled successfully.")
-    except Exception as e:
-        print(f"Error: {e}")
+    # # Canceling a guest card
+    # try:
+    #     print("Canceling guest card...")
+    #     result = rioo.cancel_card()
+    #     if result == 1:
+    #         print("Guest card canceled successfully.")
+    # except Exception as e:
+    #     print(f"Error: {e}")
 
-    # Making a guest card
-    try:
-        print("Making guest card...")
-        room_no,checkin,checkout = rioo.generate_room_and_time(301,1)
-        # print(room_no,checkin,checkout)
-        # result = rioo.make_guest_card("001.001.00301", "2024-09-14 23:00:00", "2024-09-15 12:05:00",0)
-        result = rioo.make_guest_card(room_no,checkin,checkout)
-        if result == 1:
-            print("Guest card created successfully.")
-    except Exception as e:
-        print(f"Error: {e}")
+    # # Making a guest card
+    # try:
+    #     print("Making guest card...")
+    #     room_no,checkin,checkout = rioo.generate_room_and_time(301,1)
+    #     # print(room_no,checkin,checkout)
+    #     # result = rioo.make_guest_card("001.001.00301", "2024-09-14 23:00:00", "2024-09-15 12:05:00",0)
+    #     result = rioo.make_guest_card(room_no,checkin,checkout)
+    #     if result == 1:
+    #         print("Guest card created successfully.")
+    # except Exception as e:
+    #     print(f"Error: {e}")
 
-    # Reading a guest card
-    try:
-        print("Reading guest card...")
-        card_details = rioo.read_guest_card()
-        print(card_details)
-    except Exception as e:
-        print(f"Error: {e}")
+    # # Reading a guest card
+    # try:
+    #     print("Reading guest card...")
+    #     card_details = rioo.read_guest_card()
+    #     print(card_details)
+    # except Exception as e:
+    #     print(f"Error: {e}")
 
 
 
-    # # Retrieving the card serial number
+    # Retrieving the card serial number
     # try:
     #     print("Getting card serial number...")
     #     card_snr = rioo.get_card_snr()
