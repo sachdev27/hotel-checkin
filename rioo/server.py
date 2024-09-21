@@ -1,7 +1,5 @@
-import threading
 import time
-from flask import Flask, render_template, jsonify, request, redirect, url_for,Response
-import gspread
+from flask import Flask, render_template, jsonify, request
 from main import RIOO  # Assuming you have the RIOO class defined in a file named RIOO.py
 import os
 from gcp import GoogleSheetHandler
@@ -9,13 +7,21 @@ from datetime import datetime
 import config  # Assuming config contains your credentials for Google Sheets
 import logging
 import json
+import ctypes
+from plyer import notification
 app = Flask(__name__)
 
 # Set up the RIOO (LockSDK) interface
-current_dir = os.path.dirname(os.path.realpath(__file__))
-sdk_path = current_dir + "\libs\LockSDK.dll"
-rioo = RIOO(sdk_path)
+current_dir = os.path.abspath(os.path.dirname(__file__))  # Get the absolute path of the current directory
+sdk_path = os.path.join(current_dir, "libs", "LockSDK.dll")  # Use os.path.join() to ensure cross-platform compatibility
+
+# Check if the DLL exists at the specified path
+if not os.path.exists(sdk_path):
+    raise FileNotFoundError(f"LockSDK.dll not found at {sdk_path}")
+
+# rioo = RIOO(sdk_path)
 ROOM_FORMAT = "001.001.{room_no:05d}"
+LOCALIP = "127.0.0.1"
 current_card_data = None
 
 # Set up Google Sheet handler
@@ -31,6 +37,17 @@ def init_google_sheet_handler():
         google_sheet_handler.open_sheet()
     except Exception as e:
         logging.error("Error connecting to google services!")
+
+def show_notification(title, message):
+    """
+    Function to trigger a system-wide notification.
+    """
+    notification.notify(
+        title=title,
+        message=message,
+        app_name='',
+        timeout=30  # Duration in seconds
+    )
 
 def set_date_and_room(selected_record):
     room_no = ROOM_FORMAT.format(room_no=selected_record['Room Number'])
@@ -139,7 +156,7 @@ def read_card():
 
 @app.route('/', methods=['GET', 'POST'])
 def register():
-    global current_card_data 
+    global current_card_data
     init_google_sheet_handler()
     # last_3_records = google_sheet_handler.get_last_n_records(100)
 
@@ -200,6 +217,11 @@ def register():
                         "checkin_time": checkin_time,
                         "checkout_time": checkout_time
                     })
+
+                    # Show a notification with the card details
+                    message = f"Guest: {current_card_data['guest_name']}\nRoom: {current_card_data['room_no']}\nCheck-in: {current_card_data['checkin_time']}\nCheck-out: {current_card_data['checkout_time']}"
+                    show_notification("Card Created", message)
+
                     return current_card_data
                 else:
                     return jsonify({
@@ -225,4 +247,4 @@ def register():
 
 # Main function to run the Flask app
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True,port=80)
