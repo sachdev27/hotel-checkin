@@ -1,5 +1,6 @@
+import socket
 import time
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request,abort
 from main import RIOO  # Assuming you have the RIOO class defined in a file named RIOO.py
 import os
 from gcp import GoogleSheetHandler
@@ -22,6 +23,8 @@ if not os.path.exists(sdk_path):
 # rioo = RIOO(sdk_path)
 ROOM_FORMAT = "001.001.{room_no:05d}"
 LOCALIP = "127.0.0.1"
+# Define a custom header and token for verification
+VALID_CUSTOM_HEADER = "X-Custom-Header"
 current_card_data = None
 
 # Set up Google Sheet handler
@@ -37,6 +40,26 @@ def init_google_sheet_handler():
         google_sheet_handler.open_sheet()
     except Exception as e:
         logging.error("Error connecting to google services!")
+
+def handle_request(request):
+    # Verify the custom header exists and matches the valid token
+    if request.method == 'POST':
+        custom_header_value = request.headers.get(VALID_CUSTOM_HEADER)
+        if custom_header_value == config.VALID_TOKEN:
+            # Process the request
+            return
+        else:
+            # Unauthorized access
+            abort(403)
+    else:
+        # Method not allowed
+        abort(405)
+
+def check_if_local_request(request):
+    client_ip = request.remote_addr
+    local_ip = LOCALIP
+    print(client_ip,local_ip)
+    return client_ip == local_ip
 
 def show_notification(title, message):
     """
@@ -156,9 +179,10 @@ def read_card():
 
 @app.route('/', methods=['GET', 'POST'])
 def register():
+    if not check_if_local_request(request=request): handle_request(request=request)
+
     global current_card_data
     init_google_sheet_handler()
-    # last_3_records = google_sheet_handler.get_last_n_records(100)
 
     if request.method == 'POST':
         # Get selected record from the form
