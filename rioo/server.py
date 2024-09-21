@@ -111,7 +111,7 @@ def fetch_reader_status():
             raise Exception
     except Exception as e:
         logging.error(e)
-        encoder_status = -1
+        encoder_status = -2
         card_reader_status['status'] = "No Encoder Detected"
         card_reader_status["connection"] = "Down"
 
@@ -124,12 +124,14 @@ def fetch_card_status():
         encoder_status = rioo.get_card_status()
         if encoder_status == 1 :
             card_status['status'] = "Card is placed on Encoder"
+            card_status["connection"] = "Active"
             card_status['error_code'] = 1
         else:
             raise Exception
     except Exception as e:
+        card_status['error_code'] = -1
+        card_status["connection"] = "Down"
         card_status['status'] = "Card is not placed on Encoder!"
-        card_status['error_code'] = -2
     return card_status
 
 def fetch_card_details():
@@ -173,8 +175,7 @@ def _check_error(code: int):
 @app.route('/status', methods=['GET'])
 def get_status():
     card_status = fetch_reader_status()
-    response_data = card_status
-    return jsonify(response_data)
+    return jsonify(card_status)
 
 @app.route('/read', methods=['GET'])
 def read_card():
@@ -209,16 +210,18 @@ def register():
                 print(status)
                 error_msg = _check_error(status['error_code'])
                 if error_msg:
+                    show_notification("Error Creating Card!", status['status'])
                     return jsonify({
                         "status" : "Error",
-                        "message": error_msg
+                        "message": status['status']
                     })
 
             except Exception as e:
                 logging.error("Error: Encoder or Card Not Detected!")
+                show_notification("Error Creating Card!", "Encoder or Card Not Detected!")
                 return jsonify({
                     "status" : "Error",
-                    "message": error_msg
+                    "message": status['status']
                 })
 
             # Fetch Card Status
@@ -227,16 +230,18 @@ def register():
                 print(status)
                 error_msg = _check_error(status['error_code'])
                 if error_msg:
+                    show_notification("Error Creating Card!", status['status']) 
                     return jsonify({
                         "status" : "Error",
-                        "message": error_msg
+                        "message": status['status']
                     })
 
             except Exception as e:
                 logging.error("Error: Encoder or Card Not Detected!")
+                show_notification("Error Creating Card!", "Encoder or Card Not Detected!")
                 return jsonify({
                     "status" : "Error",
-                    "message": error_msg
+                    "message": status['status']
                 })
 
             try:
@@ -256,12 +261,14 @@ def register():
 
                     return current_card_data
                 else:
+                    show_notification("Card Created", "Failed creating guest card!")
                     return jsonify({
                         "status" : "Error",
                         "message": "Failed creating guest card!"
                     })
             except Exception as e:
                 logging.error("Error")
+                show_notification("Card Created", "Failed creating guest card!")
                 return jsonify({
                     "status" : "Error",
                     "message": "Failed creating guest card!"

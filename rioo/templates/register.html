@@ -460,7 +460,7 @@
 
                     // Show error message inside the status-box
                     const errorMessageElement = document.getElementById("error-message");
-                    errorMessageElement.textContent =  "Error creating card!";
+                    errorMessageElement.textContent = data.message;
                     errorMessageElement.style.display = "block";  // Make the error message visible
 
                     document.body.classList.remove('hidden');
