@@ -141,6 +141,16 @@ def fetch_card_details():
     except Exception as e:
         logging.error("Error reading guesting!/No Card Detected : ",e)
         return None
+    
+def refresh_checkin_records():
+    # Get the lastest records from Google Sheets
+    try:
+        last_3_records = google_sheet_handler.get_last_n_records(5)
+    except Exception as e:
+        return render_template('register.html', message=f"Error fetching records: {e}", records=[])
+
+    # Render the registration form with the last 3 records in the table and dropdown
+    return render_template('register.html', records=last_3_records)
 
 def _check_error(code: int):
     """
@@ -273,16 +283,11 @@ def register():
                     "status" : "Error",
                     "message": "Failed creating guest card!"
                 })
+    
+    if request.method == "GET":    
+        return refresh_checkin_records()
 
 
-    # Get the last 3 records from Google Sheets
-    try:
-        last_3_records = google_sheet_handler.get_last_n_records(5)
-    except Exception as e:
-        return render_template('register.html', message=f"Error fetching records: {e}", records=[])
-
-    # Render the registration form with the last 3 records in the table and dropdown
-    return render_template('register.html', records=last_3_records)
 
 # Main function to run the Flask app
 if __name__ == "__main__":
