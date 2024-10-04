@@ -1,109 +1,165 @@
 # Hotel Check-In System
 
-This Google Apps Script project automates the check-in process for a hotel, integrating Google Sheets and Google Forms to manage guest information, generate pre-filled forms, and send notification emails to the reception team.
+This project automates the hotel check-in process by integrating Google Apps Script, Google Sheets, Google Forms, and Flask to manage guest information, generate pre-filled forms, and handle notifications. It supports local management using Flask and a web interface through Google Apps Script.
 
 ## Table of Contents
 - [Project Overview](#project-overview)
 - [Features](#features)
 - [Setup Instructions](#setup-instructions)
 - [Google Apps Script Functions](#google-apps-script-functions)
+- [Flask Server Setup](#flask-server-setup)
+- [Error Handling](#error-handling)
 - [Testing](#testing)
 - [Contributing](#contributing)
 - [License](#license)
 
+## DEMO
+https://github.com/user-attachments/assets/b40cf00d-f7b7-4f86-ae86-30b82da181fa
+
+
+
 ## Project Overview
 
-The Hotel Check-In System is designed to streamline the check-in process by:
-- Checking if a guest exists in the database using their phone number.
-- Sending check-in notification emails to the reception team.
-- Adding new guests to the database or updating existing guest information.
-- Generating pre-filled Google Forms for guest check-ins.
-- Logging guest check-ins into Google Sheets.
+The **Hotel Check-In System** is a hybrid system designed to streamline the check-in process by:
+- Checking guest information from a database using phone numbers.
+- Managing guest data both locally via Flask and online using Google Sheets and Forms.
+- Automating notification emails to the reception team.
+- Creating and logging guest records using Google Sheets.
 
 ## Features
 
-- **Guest Check-In Validation:** Validates if a guest is already in the database based on their phone number.
-- **Automated Emails:** Sends check-in notification emails with guest details.
-- **Database Management:** Adds new guests or updates existing guest information in the database.
-- **Form Prefill:** Generates pre-filled Google Forms links based on guest information.
-- **Google Sheets Integration:** Logs guest check-in details into designated Google Sheets.
+- **Guest Check-In Validation:** Verifies if the guest is already in the database based on their phone number.
+- **Automated Emails:** Sends guest check-in notifications to the reception team via email.
+- **Form Prefill:** Generates pre-filled Google Forms based on guest information.
+- **Database Management:** Updates or adds new guest information to the Google Sheets database.
+- **Flask Integration:** Local management via Flask API for real-time updates and guest card creation.
+- **Google Sheets Integration:** Logs guest check-in details into Google Sheets, providing both local and online sync options.
+- **System Notifications:** Uses **Plyer** to notify the system on card creation events.
 
 ## Setup Instructions
 
+### Google Apps Script Setup
+
 1. **Clone the Repository:**
-   Clone this repository to your local environment or directly copy the script files into your Google Apps Script project.
+   Clone or copy the script files from this repository into your Google Apps Script project.
 
 2. **Google Sheets Setup:**
    - Create a Google Sheet that will act as the guest database.
-   - Create another Google Sheet for logging daily check-ins.
+   - Create another Google Sheet to log daily check-ins.
    - Update the script constants with the appropriate Google Sheet IDs.
 
 3. **Google Form Setup:**
    - Create a Google Form for guest check-ins.
-   - Update the script with the appropriate form field IDs to match your form.
+   - Update the script with the corresponding form field IDs to match your form.
 
 4. **Google Drive Setup:**
-   - Set up a Google Drive folder to store guest signatures.
-   - Update the script with the appropriate Google Drive folder ID.
+   - Set up a Google Drive folder to store guest signatures and update the folder ID in the script.
 
-5. **Deploy as a Web App:**
-   - Deploy the script as a web app if you want to create a web-based check-in interface.
-   - Go to `Publish > Deploy as Web App...` in the Google Apps Script editor.
+5. **Deploy as Web App:**
+   - Go to `Publish > Deploy as Web App...` in the Google Apps Script editor to make the project accessible over the web.
 
-6. **Permissions:**
-   - The script requires access to your Google Drive, Sheets, and Gmail to function correctly.
-   - Ensure that you authorize the script when prompted.
+6. **Set Permissions:**
+   - The script requires access to Google Drive, Sheets, and Gmail APIs. Ensure you authorize these permissions when prompted.
+
+### Flask Server Setup
+
+1. **Install Dependencies:**
+   Install the required dependencies by running:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## Configuration File:
+
+- Ensure the `config.py` file contains your Google credentials and sheet IDs.
+- For added security, `config.py` is encrypted and can only be decrypted by the server process.
+
+### Start the Server:
+Start the Flask server by running:
+
+```bash
+python server.py
+```
+
+## Flask Server Setup
+
+This starts the Flask app that listens for local and external requests, integrates with Google Sheets, and manages guest card creation.
+
+### Setting Up `ngrok` (Optional for External Access)
+
+1. **Install `ngrok`:** Download and install `ngrok` to tunnel your local Flask server and make it accessible externally.
+2. **Configure `ngrok`:** Use the provided `ngrok.py` script to automate the tunneling process and make the Flask server publicly accessible via an `ngrok` URL.
 
 ## Google Apps Script Functions
 
 ### `checkUser(phoneNumber)`
-Checks if the user exists in the guest database based on the provided phone number.
+- **Purpose:** Checks if a guest exists in the database based on their phone number.
 
 ### `onFormSubmit(e)`
-Handles form submissions and processes guest check-ins, including adding new guests to the database and sending emails.
+- **Purpose:** Handles form submissions, checks guest data, and either adds or updates guests in the database.
 
 ### `addNewGuestToDB(phoneNumber, name, address, guestID)`
-Adds or updates guest information in the database.
+- **Purpose:** Adds new guest details to the Google Sheets database or updates an existing entry.
 
 ### `createPrefilledFormLinks(phoneNumber)`
-Generates a pre-filled Google Form URL based on guest information.
+- **Purpose:** Generates a pre-filled Google Form URL using guest information.
 
 ### `sendCheckInEmail(name, phoneNumber)`
-Sends a check-in notification email to the reception team.
+- **Purpose:** Sends a check-in notification email to the reception team.
 
 ### `sendSuccessfulCheckInEmail(name, phoneNumber)`
-Sends a successful check-in confirmation email to the reception team.
-
-### `getOrCreateMonthSpreadsheet(date)`
-Gets or creates a Google Sheet for the current month to log check-ins.
-
-### `getOrCreateDateSheet(spreadsheet, date)`
-Gets or creates a sheet named after the day of the month for logging check-ins.
+- **Purpose:** Sends a confirmation email to the reception team when a guest successfully checks in.
 
 ### `saveSignature(dataUrl)`
-Saves a guest's signature as a PNG file in Google Drive.
+- **Purpose:** Saves the guest’s signature as a PNG file in Google Drive.
+
+## Flask Server Setup Details
+
+### `server.py`
+- **`/register` Route:** Handles both `GET` and `POST` requests for guest card creation, returning either JSON responses or rendering an HTML page.
+- **Local Request Handling:** The server can distinguish between local requests (e.g., from Google Apps Script) and external requests. Local operations such as card generation and system notifications are performed accordingly.
+- **Error Handling:** Implements extensive error handling to ensure the server stays active, even in critical failure scenarios.
+
+### `gcp.py`
+- **Purpose:** Manages integration with Google Cloud APIs, such as Google Sheets and Forms, using service account credentials to interact with Google services.
+
+### `locksdk.py`
+- **Purpose:** Handles interactions with the hotel’s lock system SDK for generating and managing guest cards, giving control over the hotel’s card reader system.
+
+## Error Handling
+
+- **Try-Except Blocks:** Extensive error handling throughout the system ensures minimal downtime, with all exceptions logged for debugging purposes.
+- **Logging:** A comprehensive logging system is in place to capture and log all errors, warnings, and system events.
 
 ## Testing
 
-To test the functions:
+### Google Apps Script Testing
+To test the Google Apps Script functionality:
+1. **Run Unit Tests:** Test functions like `test_checkUser_existing` and `test_addNewGuestToDB_new_guest` are included.
+2. **Simulate Form Submissions:** Use the `test_onFormSubmit` function to simulate form submissions and verify that the system processes check-ins correctly.
 
-1. **Run Unit Tests:**
-   - Test functions are included in the script (e.g., `test_checkUser_existing`, `test_addNewGuestToDB_new_guest`).
-   - Open the Google Apps Script editor and run these functions directly to validate functionality.
+### Flask API Testing
+To test the Flask API, you can use tools like **Postman** or **cURL** to make requests:
+```bash
+curl -X POST http://localhost:80/register -d "record={...}"
+```
 
-2. **Simulate Form Submissions:**
-   - Use the `test_onFormSubmit` function to simulate form submissions and check how the system processes guest check-ins.
+## System Notifications
+
+The system uses **Plyer** to create notifications for certain actions, such as guest card generation. These notifications can be triggered on any local system that supports the **Plyer** library. This feature ensures that important actions, like card creation, are notified instantly to the relevant system operators.
+
+To test system notifications, make sure that your environment is set up to display local notifications, and the **Plyer** library is installed.
 
 ## Contributing
 
-Contributions are welcome! Please follow these steps:
+To contribute to this project:
 
 1. Fork the repository.
-2. Create a new branch (`feature/your-feature-name`).
-3. Commit your changes.
-4. Push to the branch.
-5. Open a pull request.
+2. Create a new branch (e.g., `feature/your-feature-name`).
+3. Make the necessary changes and commit your updates.
+4. Open a pull request for review and integration.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

@@ -5,7 +5,7 @@ const GUEST_DB_SHEET_ID = '';
 const CHECK_IN_SHEET_ID = '';
 const EMAIL = ''
 const SIGNATURE_SHEET_PAGE_NAME = 'signature'
-
+const NGROK_REGISTER_URL = ''
 
 /**
  * Google Form Field IDs to prefill the Google Form for known users
@@ -20,7 +20,6 @@ const FORM_FIELD_IDS = {
   GUEST_EMAIL_ADDRESS: ""
 };
 
-
 /**
  * Checks if the user exists in the guest database.
  */
@@ -31,7 +30,6 @@ function checkUser(phoneNumber) {
   for (let i = 1; i < data.length; i++) {
     if (data[i][0] == phoneNumber) {
       const username = data[i][1];
-      sendCheckInEmail(username, phoneNumber);
       const url = createPrefilledFormLinks(phoneNumber);
       return { exists: true, formUrl: url, guestID: data[i][3] };
     }
@@ -46,7 +44,7 @@ function checkUser(phoneNumber) {
  */
 function onFormSubmit(e) {
   const formItems = e.response.getItemResponses();
-  let phoneNumber, name, address, guestID;
+  let phoneNumber, name, address, guestID,room_no,checkout_date;
 
   // Extract form responses
   formItems.forEach(itemResponse => {
@@ -66,12 +64,17 @@ function onFormSubmit(e) {
       case "Guest ID Card":
         guestID = response;
         break;
+      case "Room Number":
+        room_no = response;
+        break;
+      case "Check-Out Date":
+        checkout_date = response;
+        break;
     }
   });
 
   // Process guest check-in
   addNewGuestToDB(phoneNumber, name, address, guestID);
-  sendCheckInEmail(name, phoneNumber);
 
   // Log form responses into sheets
   const date = new Date();
@@ -81,7 +84,45 @@ function onFormSubmit(e) {
 
   // successfull checkin
   sendSuccessfulCheckInEmail(name, phoneNumber);
+
+  // Create a post request
+  console.log(name,phoneNumber,room_no,checkout_date)
+  sendPostRequestToLocal(name,phoneNumber,room_no,checkout_date)
 }
+
+
+/**
+ * Send Post Request to Flask with the 'record' field
+ */
+function sendPostRequestToLocal(name,phone,room_no,checkout_date) {
+  checkout_date = convertDateFormat(checkout_date)
+  var room_no = parseInt(room_no);
+  console.log(checkout_date)
+  const selectedRecord = {
+    'Phone Number': phone,
+    'Guest Name': name,
+    'Room Number': room_no,
+    'Check-Out Date': checkout_date
+  };
+
+  // Serialize the selectedRecord object to a JSON string
+  const formData = `record=${encodeURIComponent(JSON.stringify(selectedRecord))}`;
+
+  // Set up the options for the POST request with form-encoded data
+  const options = {
+    method: 'post',
+    contentType: 'application/x-www-form-urlencoded',
+    payload: formData,
+    headers: {
+      'X-Custom-Header': 'softwareProject2879'  // Add the custom header with the token
+    }
+  };
+
+  // Send the request to the localhost or ngrok URL
+  const response = UrlFetchApp.fetch(NGROK_REGISTER_URL, options); 
+  Logger.log(response.getContentText());
+}
+
 
 /**
  * Adds or updates guest information in the database sheet.
@@ -89,15 +130,23 @@ function onFormSubmit(e) {
 function addNewGuestToDB(phoneNumber, name, address, guestID) {
   const userExist = checkUser(phoneNumber);
   const guestDbSheet = SpreadsheetApp.openById(GUEST_DB_SHEET_ID).getActiveSheet();
-  const signSheet = SpreadsheetApp.openById(GUEST_DB_SHEET_ID).getSheetByName(SIGNATURE_SHEET_PAGE_NAME);
+  const signSheet = SpreadsheetApp.openById(GUEST_DB_SHEET_ID).getSheetByName("signature");
   const signData = signSheet.getDataRange().getValues();
   const latestSign = signData[signData.length - 1][3];
 
   if (!userExist.exists) {
+    if (guestID){
     guestID = `https://drive.google.com/file/d/${guestID[0]}`;
+    }
+    else {
+      guestID = "Not Inserted"
+      addGuestInFormSheet(phoneNumber,guestID);
+    }
     const newRowData = [phoneNumber, name, address, guestID, latestSign, new Date()];
     guestDbSheet.appendRow(newRowData);
-  } else {
+  } 
+  
+  else {
     const data = guestDbSheet.getDataRange().getValues();
 
     if (!guestID){
@@ -127,14 +176,14 @@ function addSignatureInFormSheet(phoneNumber, signatureLink) {
   // Open the Google Sheet by ID
   const sheet = SpreadsheetApp.openById(CHECK_IN_SHEET_ID).getActiveSheet();
   const data = sheet.getDataRange().getValues();
-
+  
   // Find the last row matching the phone number
   const lastFoundRow = data.reverse().findIndex(row => row[1] == phoneNumber);
-
+  
   if (lastFoundRow !== -1) {
     // Update the signature link in the matching row
     const rowIndex = data.length - lastFoundRow;
-    sheet.getRange(rowIndex, 10).setValue(signatureLink);
+    sheet.getRange(rowIndex, 8).setValue(signatureLink);
   }
 }
 
@@ -146,14 +195,14 @@ function addGuestInFormSheet(phoneNumber, guestID) {
   // Open the Google Sheet by ID
   const sheet = SpreadsheetApp.openById(CHECK_IN_SHEET_ID).getActiveSheet();
   const data = sheet.getDataRange().getValues();
-
+  
   // Find the last row matching the phone number
   const lastFoundRow = data.reverse().findIndex(row => row[1] == phoneNumber);
-
+  
   if (lastFoundRow !== -1) {
     // Update the guest ID in the matching row
     const rowIndex = data.length - lastFoundRow;
-    sheet.getRange(rowIndex, 8).setValue(guestID);
+    sheet.getRange(rowIndex, 6).setValue(guestID);
   }
 }
 
@@ -182,40 +231,40 @@ function createPrefilledFormLinks(phoneNumber) {
 /**
  * Sends a check-in notification email to the reception team with enhanced UI.
  */
-function sendCheckInEmail(name, phoneNumber) {
-  const now = new Date();
-  const recipient = EMAIL; // Replace with the actual reception email
-  const subject = `Visitor Check-In Notification: ${now.toLocaleString()}`;
+// function sendCheckInEmail(name, phoneNumber) {
+//   const now = new Date();
+//   const recipient = EMAIL; // Replace with the actual reception email
+//   const subject = `Visitor Check-In Notification: ${now.toLocaleString()}`;
 
-  const htmlBody = `
-    <div style="font-family: Arial, sans-serif; color: #333;">
-      <h2 style="color: #02406f;">Visitor Check-In Notification</h2>
-      <p>Dear Reception Team,</p>
-      <p>This is to notify you that a visitor has checked in.</p>
-      <table style="border-collapse: collapse; width: 70%; margin-top: 20px;">
-        <tr>
-          <td style="padding: 10px; border: 1px solid #ccc;"><strong>Name:</strong></td>
-          <td style="padding: 10px; border: 1px solid #ccc;">${name}</td>
-        </tr>
-        <tr>
-          <td style="padding: 10px; border: 1px solid #ccc;"><strong>Phone Number:</strong></td>
-          <td style="padding: 10px; border: 1px solid #ccc;">${phoneNumber}</td>
-        </tr>
-        <tr>
-          <td style="padding: 10px; border: 1px solid #ccc;"><strong>Check-In Time:</strong></td>
-          <td style="padding: 10px; border: 1px solid #ccc;">${now.toLocaleString()}</td>
-        </tr>
-      </table>
-      <p style="margin-top: 20px;">Thank you,<br>Automated Check-In System</p>
-    </div>
-  `;
+//   const htmlBody = `
+//     <div style="font-family: Arial, sans-serif; color: #333;">
+//       <h2 style="color: #02406f;">Visitor Check-In Notification</h2>
+//       <p>Dear Reception Team,</p>
+//       <p>This is to notify you that a visitor has checked in.</p>
+//       <table style="border-collapse: collapse; width: 70%; margin-top: 20px;">
+//         <tr>
+//           <td style="padding: 10px; border: 1px solid #ccc;"><strong>Name:</strong></td>
+//           <td style="padding: 10px; border: 1px solid #ccc;">${name}</td>
+//         </tr>
+//         <tr>
+//           <td style="padding: 10px; border: 1px solid #ccc;"><strong>Phone Number:</strong></td>
+//           <td style="padding: 10px; border: 1px solid #ccc;">${phoneNumber}</td>
+//         </tr>
+//         <tr>
+//           <td style="padding: 10px; border: 1px solid #ccc;"><strong>Check-In Time:</strong></td>
+//           <td style="padding: 10px; border: 1px solid #ccc;">${now.toLocaleString()}</td>
+//         </tr>
+//       </table>
+//       <p style="margin-top: 20px;">Thank you,<br>Automated Check-In System</p>
+//     </div>
+//   `;
 
-  MailApp.sendEmail({
-    to: recipient,
-    subject: subject,
-    htmlBody: htmlBody
-  });
-}
+//   MailApp.sendEmail({
+//     to: recipient,
+//     subject: subject,
+//     htmlBody: htmlBody
+//   });
+// }
 
 
 
@@ -257,6 +306,12 @@ function sendSuccessfulCheckInEmail(name, phoneNumber) {
   });
 }
 
+  // Convert the date from YYYY-MM-DD to MM/DD/YYYY
+  function convertDateFormat(dateString) {
+    const [year, month, day] = dateString.split("-");
+    return `${month}/${day}/${year}`;
+  }
+
 
 /**
  * Handles HTTP GET requests and serves the user registration page.
@@ -269,11 +324,11 @@ function doGet() {
 
 
 /**
- ______   ______     ______     ______   __     __   __     ______
-/\__  _\ /\  ___\   /\  ___\   /\__  _\ /\ \   /\ "-.\ \   /\  ___\
-\/_/\ \/ \ \  __\   \ \___  \  \/_/\ \/ \ \ \  \ \ \-.  \  \ \ \__ \
-   \ \_\  \ \_____\  \/\_____\    \ \_\  \ \_\  \ \_\\"\_\  \ \_____\
-    \/_/   \/_____/   \/_____/     \/_/   \/_/   \/_/ \/_/   \/_____/
+ ______   ______     ______     ______   __     __   __     ______    
+/\__  _\ /\  ___\   /\  ___\   /\__  _\ /\ \   /\ "-.\ \   /\  ___\   
+\/_/\ \/ \ \  __\   \ \___  \  \/_/\ \/ \ \ \  \ \ \-.  \  \ \ \__ \  
+   \ \_\  \ \_____\  \/\_____\    \ \_\  \ \_\  \ \_\\"\_\  \ \_____\ 
+    \/_/   \/_____/   \/_____/     \/_/   \/_/   \/_/ \/_/   \/_____/                                      
  */
 
 
@@ -296,8 +351,8 @@ function doGet() {
 // Test Add sign & Guest in Check In form
 function test_addSignatureCheckinForm() {
   // Test with an existing phone number
-  const phoneNumber = "9899828226"; // Replace with a known existing number in your sheet
-  const signLink = "https://drive.google.com/file/d/1GzXaLDYjdQGPk62MPO4qisbEv3VxpNk7/view?usp=drivesdk";
+  const phoneNumber = "9921939226"; // Replace with a known existing number in your sheet
+  const signLink = "https://drive.google.com/file/d/1GzXaLDYjdQGPk62MPO4qisbEv3VxpNk7/view?usp=drivesdk"; 
   const result = addSignatureInFormSheet(phoneNumber,signLink);
   console.log(result);
   return result;
@@ -305,8 +360,8 @@ function test_addSignatureCheckinForm() {
 
 function test_addGuestIdCheckinForm() {
   // Test with an existing phone number
-  const phoneNumber = "9899828226"; // Replace with a known existing number in your sheet
-  const guestID = "https://drive.google.com/file/d/1GzX";
+  const phoneNumber = "9921939226"; // Replace with a known existing number in your sheet
+  const guestID = "https://drive.google.com/file/d/1GzX"; 
   const result = addGuestInFormSheet(phoneNumber,guestID);
   console.log(result);
   return result;
@@ -317,7 +372,7 @@ function test_addGuestIdCheckinForm() {
 
 function test_checkUser_existing() {
   // Test with an existing phone number
-  const phoneNumber = "9899828226"; // Replace with a known existing number in your sheet
+  const phoneNumber = "9921939226"; // Replace with a known existing number in your sheet
   const result = checkUser(phoneNumber);
   console.log(result);
   return result;
@@ -340,14 +395,14 @@ function test_addNewGuestToDB_new_guest() {
   const name = "Test User";
   const address = "Test Address";
   const guestID = "1234567890"; // Simulated guest ID
-
+  
   addNewGuestToDB(phoneNumber, name, address, guestID);
   console.log("New guest added.");
 }
 
 function test_addNewGuestToDB_existing_guest() {
   // Test updating an existing guest
-  const phoneNumber = "9899828226"; // Replace with an existing phone number
+  const phoneNumber = "9921939226"; // Replace with an existing phone number
   const name = "Updated User"; // Name to update
   const address = "Updated Address"; // Address to update
   const guestID = null; // Simulated guest ID to update
@@ -360,7 +415,7 @@ function test_addNewGuestToDB_existing_guest() {
 // 3. Test Case for createPrefilledFormLinks Function
 function test_createPrefilledFormLinks() {
   // Test creating a prefilled form link
-  const phoneNumber = "9899828228"; // Replace with an existing phone number in your sheet
+  const phoneNumber = "9921939228"; // Replace with an existing phone number in your sheet
   const prefilledUrl = createPrefilledFormLinks(phoneNumber);
   console.log(prefilledUrl);
   return prefilledUrl;
@@ -371,14 +426,14 @@ function test_createPrefilledFormLinks() {
 function test_sendCheckInEmail() {
   // Test sending a check-in email
   const name = "Test User";
-  const phoneNumber = "9899828226"; // Replace with an existing phone number
+  const phoneNumber = "9921939226"; // Replace with an existing phone number
   sendCheckInEmail(name, phoneNumber);
   console.log("Email sent.");
 }
 function test_sendCheckInSuccessfulEmail() {
   // Test sending a check-in email
   const name = "Test User";
-  const phoneNumber = "9899828226"; // Replace with an existing phone number
+  const phoneNumber = "9921939226"; // Replace with an existing phone number
   sendSuccessfulCheckInEmail(name, phoneNumber);
   console.log("Email sent.");
 }
@@ -422,3 +477,23 @@ function test_onFormSubmit() {
   onFormSubmit(mockResponse);
   console.log("Form submission processed.");
 }
+
+/**
+ * Test function for sendPostRequestToLocal
+ */
+function test_sendPostRequestToLocal() {
+  // Test data for sending a POST request
+  const guestName = "John Doe";   // Replace with a test name
+  const phoneNumber = "9123456789";  // Replace with a test phone number
+  const roomNumber = "201";        // Replace with a test room number
+  const checkoutDate = "2024-09-25"; // Replace with a test checkout date
+
+  // Call the function with test data
+  const result = sendPostRequestToLocal(guestName, phoneNumber, roomNumber, checkoutDate);
+  
+  // Log the result for debugging purposes
+  console.log(result);
+  
+  return result;
+}
+
