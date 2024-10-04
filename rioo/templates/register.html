@@ -76,7 +76,7 @@
             background-color: #f1f1f1;
         }
 
-        select, input[type="submit"] {
+        select, input[type="submit"], button.reload-btn {
             padding: 10px;
             width: 100%;
             border: 1px solid #ddd;
@@ -105,6 +105,32 @@
 
         input[type="submit"]:hover {
             background-color: #2ecc71;
+        }
+        /* Styling for the refresh button */
+        button.reload-btn {
+            background-color: #02406f; /* Light blue background */
+            color: white; /* White text */
+            border: none; /* No border */
+            cursor: pointer; /* Pointer cursor on hover */
+            transition: background-color 0.3s ease-in-out; /* Smooth transition for background */
+        }
+
+        /* Change background color on hover */
+        button.reload-btn:hover {
+            background-color: #054d85; /* Darker blue on hover */
+        }
+
+        /* Add some focus effect when clicking */
+        button.reload-btn:active {
+            background-color: #1d6fa5; /* Even darker blue on click */
+            box-shadow: 0 4px #1b5d8a; /* Shadow effect on click */
+            transform: translateY(2px); /* Slight downward movement on click */
+        }
+
+        /* Optional: Make it stand out a bit more */
+        button.reload-btn:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5); /* Blue glow when focused */
         }
 
         /* Loader styling */
@@ -354,7 +380,7 @@
                     {% endfor %}
                 </select>
                 <input type="submit" value="Generate Card">
-                <!-- <a href="/register" class="btn">Refresh</a> -->
+                <button id="refresh-btn" class="reload-btn" type="button" onclick="window.location.reload();">Refresh</button>
             </form>
 
 
@@ -460,7 +486,7 @@
 
                     // Show error message inside the status-box
                     const errorMessageElement = document.getElementById("error-message");
-                    errorMessageElement.textContent =  "Error creating card!";
+                    errorMessageElement.textContent = data.message;
                     errorMessageElement.style.display = "block";  // Make the error message visible
 
                     document.body.classList.remove('hidden');

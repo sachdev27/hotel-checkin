@@ -1,42 +1,70 @@
-import time
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request,abort
 from main import RIOO  # Assuming you have the RIOO class defined in a file named RIOO.py
 import os
 from gcp import GoogleSheetHandler
 from datetime import datetime
-import config  # Assuming config contains your credentials for Google Sheets
 import logging
-import json
-import ctypes
+from ngrok import start_ngrok
 from plyer import notification
 app = Flask(__name__)
+from crypto_config import *
+
 
 # Set up the RIOO (LockSDK) interface
 current_dir = os.path.abspath(os.path.dirname(__file__))  # Get the absolute path of the current directory
 sdk_path = os.path.join(current_dir, "libs", "LockSDK.dll")  # Use os.path.join() to ensure cross-platform compatibility
+config_encrypted_path = os.path.join(current_dir, "config.py.enc") 
+config_path = os.path.join(current_dir, "config.py") 
 
 # Check if the DLL exists at the specified path
 if not os.path.exists(sdk_path):
     raise FileNotFoundError(f"LockSDK.dll not found at {sdk_path}")
 
-# rioo = RIOO(sdk_path)
+rioo = RIOO(sdk_path)
 ROOM_FORMAT = "001.001.{room_no:05d}"
-LOCALIP = "127.0.0.1"
-current_card_data = None
+# Define a custom header and token for verification
+VALID_CUSTOM_HEADER = "X-Custom-Header"
+GOOGLE_CHECKIN_FORM_SPREADSHEET_ID = None
+CREDENTIALS = None
+VALID_TOKEN = None
 
 # Set up Google Sheet handler
 google_sheet_handler = None
+
+def set_config_parm(config):
+    global GOOGLE_CHECKIN_FORM_SPREADSHEET_ID,CREDENTIALS,VALID_TOKEN
+    GOOGLE_CHECKIN_FORM_SPREADSHEET_ID = config.GOOGLE_CHECKIN_FORM_SPREADSHEET_ID
+    CREDENTIALS = config.CREDENTIALS
+    VALID_TOKEN = config.VALID_TOKEN
+    os.remove("config.py")
 
 def init_google_sheet_handler():
     global google_sheet_handler
     try:
         if google_sheet_handler is None:
-            credentials = config.CREDENTIALS
-            sheet_id = config.GOOGLE_CHECKIN_FORM_SPREADSHEET_ID
+            credentials = CREDENTIALS
+            sheet_id = GOOGLE_CHECKIN_FORM_SPREADSHEET_ID
             google_sheet_handler = GoogleSheetHandler(credentials, sheet_id)
         google_sheet_handler.open_sheet()
     except Exception as e:
         logging.error("Error connecting to google services!")
+
+def handle_request(request):
+    # Verify the custom header exists and matches the valid token
+    if request.method == 'POST':
+        custom_header_value = request.headers.get(VALID_CUSTOM_HEADER)
+        if custom_header_value == VALID_TOKEN:
+            # Process the request
+            return
+        else:
+            # Unauthorized access
+            abort(403)
+    else:
+        # Method not allowed
+        abort(405)
+
+def check_if_local_request(request):
+    return False if  'ngrok' in request.host else True
 
 def show_notification(title, message):
     """
@@ -45,7 +73,7 @@ def show_notification(title, message):
     notification.notify(
         title=title,
         message=message,
-        app_name='',
+        app_name='Card Created',
         timeout=30  # Duration in seconds
     )
 
@@ -83,7 +111,7 @@ def fetch_reader_status():
             raise Exception
     except Exception as e:
         logging.error(e)
-        encoder_status = -1
+        encoder_status = -2
         card_reader_status['status'] = "No Encoder Detected"
         card_reader_status["connection"] = "Down"
 
@@ -96,12 +124,14 @@ def fetch_card_status():
         encoder_status = rioo.get_card_status()
         if encoder_status == 1 :
             card_status['status'] = "Card is placed on Encoder"
+            card_status["connection"] = "Active"
             card_status['error_code'] = 1
         else:
             raise Exception
     except Exception as e:
+        card_status['error_code'] = -1
+        card_status["connection"] = "Down"
         card_status['status'] = "Card is not placed on Encoder!"
-        card_status['error_code'] = -2
     return card_status
 
 def fetch_card_details():
@@ -111,6 +141,16 @@ def fetch_card_details():
     except Exception as e:
         logging.error("Error reading guesting!/No Card Detected : ",e)
         return None
+    
+def refresh_checkin_records():
+    # Get the lastest records from Google Sheets
+    try:
+        last_3_records = google_sheet_handler.get_last_n_records(5)
+    except Exception as e:
+        return render_template('register.html', message=f"Error fetching records: {e}", records=[])
+
+    # Render the registration form with the last 3 records in the table and dropdown
+    return render_template('register.html', records=last_3_records)
 
 def _check_error(code: int):
     """
@@ -145,8 +185,7 @@ def _check_error(code: int):
 @app.route('/status', methods=['GET'])
 def get_status():
     card_status = fetch_reader_status()
-    response_data = card_status
-    return jsonify(response_data)
+    return jsonify(card_status)
 
 @app.route('/read', methods=['GET'])
 def read_card():
@@ -156,11 +195,12 @@ def read_card():
 
 @app.route('/', methods=['GET', 'POST'])
 def register():
+    if not check_if_local_request(request=request) : handle_request(request=request)
+
     global current_card_data
     init_google_sheet_handler()
-    # last_3_records = google_sheet_handler.get_last_n_records(100)
 
-    if request.method == 'POST':
+    if request.method == 'POST': 
         # Get selected record from the form
         selected_record = request.form.get('record')
         # print(selected_record)
@@ -170,41 +210,45 @@ def register():
             room_no,checkin_time,checkout_time = set_date_and_room(selected_record=selected_record)
             # Use selected record to generate the card
 
+            # message = f"Guest: {selected_record['Guest Name']}\nRoom: {room_no}\nCheck-in: {checkin_time}\nCheck-out: {checkout_time}"
+            # show_notification("Card Created", message)
+            
             print(selected_record['Guest Name'],room_no,checkin_time,checkout_time)
             # Return JSON response to update the loader and card details
             try:
                 status = fetch_reader_status()
                 print(status)
-                error_msg = _check_error(status['error_code'])
-                if error_msg:
+                if status['error_code'] != 1:
+                    show_notification("Error Creating Card!", status['status'])
                     return jsonify({
                         "status" : "Error",
-                        "message": error_msg
+                        "message": status['status']
                     })
 
             except Exception as e:
                 logging.error("Error: Encoder or Card Not Detected!")
+                show_notification("Error Creating Card!", "Encoder or Card Not Detected!")
                 return jsonify({
                     "status" : "Error",
-                    "message": error_msg
+                    "message": status['status']
                 })
 
             # Fetch Card Status
             try:
                 status = fetch_card_status()
-                print(status)
-                error_msg = _check_error(status['error_code'])
-                if error_msg:
+                if status['error_code'] != 1:
+                    show_notification("Error Creating Card!", status['status']) 
                     return jsonify({
                         "status" : "Error",
-                        "message": error_msg
+                        "message": status['status']
                     })
 
             except Exception as e:
                 logging.error("Error: Encoder or Card Not Detected!")
+                show_notification("Error Creating Card!", "Encoder or Card Not Detected!")
                 return jsonify({
                     "status" : "Error",
-                    "message": error_msg
+                    "message": status['status']
                 })
 
             try:
@@ -217,34 +261,35 @@ def register():
                         "checkin_time": checkin_time,
                         "checkout_time": checkout_time
                     })
-
+                    
                     # Show a notification with the card details
-                    message = f"Guest: {current_card_data['guest_name']}\nRoom: {current_card_data['room_no']}\nCheck-in: {current_card_data['checkin_time']}\nCheck-out: {current_card_data['checkout_time']}"
+                    message = f"Guest: {selected_record['Guest Name']}\nRoom: {room_no}\nCheck-in: {checkin_time}\nCheck-out: {checkout_time}"
                     show_notification("Card Created", message)
-
                     return current_card_data
                 else:
+                    show_notification("Card Created", "Failed creating guest card!")
                     return jsonify({
                         "status" : "Error",
                         "message": "Failed creating guest card!"
                     })
             except Exception as e:
                 logging.error("Error")
+                show_notification("Card Created", "Failed creating guest card!")
                 return jsonify({
                     "status" : "Error",
                     "message": "Failed creating guest card!"
                 })
+    
+    if request.method == "GET":    
+        return refresh_checkin_records()
 
 
-    # Get the last 3 records from Google Sheets
-    try:
-        last_3_records = google_sheet_handler.get_last_n_records(5)
-    except Exception as e:
-        return render_template('register.html', message=f"Error fetching records: {e}", records=[])
-
-    # Render the registration form with the last 3 records in the table and dropdown
-    return render_template('register.html', records=last_3_records)
 
 # Main function to run the Flask app
 if __name__ == "__main__":
+    decrypt_file(config_encrypted_path)
+    config = import_config("config.py")
+    set_config_parm(config)
+    # Import the decrypted config.py
+    start_ngrok()
     app.run(debug=True,port=80)
